@@ -99,11 +99,16 @@ purpose rather than by agent name, so it covers crawlers no list knows about yet
 — the one non-rotting layer. Nothing enforces it. A missing `Content-Signal` is
 a `fix`, not an `ask`.
 
-Its vocabulary does **not** line up with the agent list: `search=yes` means
-conventional indexing and explicitly excludes AI summaries, so blocking
-`OAI-SearchBot` beside it is `ai-input=no` working, not a contradiction. The real
-contradiction is a conventional search engine sitting in the block list. See
-`references/crawling.md` before reporting either.
+**The signals decide; the agent list is generated from them.** Do not check the
+two for agreement — derive the list by purpose from `references/ai-crawlers.txt`
+and diff it against the project's array. Any difference is the finding, and the
+direction says whether the project under-enforces its declaration or is blocking
+something its signals never asked for.
+
+The vocabularies do not line up: `Content-Signal`'s `search` means conventional
+indexing and excludes AI summaries, so blocking `OAI-SearchBot` beside
+`search=yes` is `ai-input=no` working, **not** a contradiction. Translation table
+and the command are in `references/crawling.md`.
 Emit it from `robots.ts` via `rules[].other`, and **without** the Cloudflare
 policy preamble.
 

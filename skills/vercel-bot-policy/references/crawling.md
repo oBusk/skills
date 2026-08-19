@@ -102,34 +102,47 @@ Nothing enforces it. It is a declaration, published by Cloudflare in September
 and a machine-readable reservation of rights — never as a control. The firewall
 is still the only enforcement.
 
-### Keep the signals and the list consistent
+### Derive the list from the signals
 
-The two halves state the same policy in different vocabularies, and the words do
-not line up — `Content-Signal`'s `search` means **conventional indexing and
-explicitly excludes AI-generated summaries**, which is the opposite of the
-`ai-search` tag in `ai-crawlers.txt`. Translate before comparing:
+**The signals are the decision; the agent list is generated from them.** Do not
+maintain the two independently and try to keep them agreeing — three yes/no
+answers are something a person can hold in their head, thirty user-agent strings
+are not.
 
-| Blocked agent's purpose | Implied signal |
+The vocabularies do not line up, so translate first. `Content-Signal`'s `search`
+means **conventional indexing and explicitly excludes AI-generated summaries**,
+which is the opposite of the `ai-search` tag in `ai-crawlers.txt`:
+
+| Signal set to `no` | Purposes to block |
 | --- | --- |
-| `training` | `ai-train=no` |
-| `ai-search` | `ai-input=no` |
-| `user-agent` | `ai-input=no` |
+| `ai-train=no` | `training` |
+| `ai-input=no` | `ai-search`, `user-agent` |
+| `search=no` | none — that is `Disallow: /` for `*`, not an agent list |
 
-So blocking `OAI-SearchBot` alongside `search=yes` is **not** a contradiction —
-it is `ai-input=no` doing its job. Do not report it as one.
+Then generate:
 
-The contradiction that *is* real: a **conventional** search engine in the block
-list while `search=yes` is declared. Nothing in `ai-crawlers.txt` should be one,
-but a project's own list may have drifted. Check any unfamiliar agent against
-its operator's documentation before assuming the list is right — `PetalBot` sat
-in this file until it turned out to be Huawei's Petal Search crawler rather than
-an AI agent. Their AI trainer is `PanguBot`.
+```bash
+BLOCK='training|ai-search|user-agent'   # ai-train=no and ai-input=no
+BLOCK='training'                        # ai-train=no only, the common case
 
-Two checks worth running:
+awk -v p="^($BLOCK)$" '$1 !~ /^#/ && $2 ~ p { printf "    \"%s\",
+", $1 }' ai-crawlers.txt
+```
 
-- Every purpose present in the blocked list has its signal set to `no`. A list
-  blocking training bots under `ai-train=yes` says two opposite things.
-- No blocked agent is a conventional indexer while `search=yes`.
+Diff the output against the project's array. **Any difference is the finding**,
+and the direction tells you which:
+
+- In the generated list, missing from the project → the project under-enforces
+  its own declaration. The usual case, and a `fix`.
+- In the project, not in the generated list → either the project caught an agent
+  before `ai-crawlers.txt` did, or it is blocking something its signals do not
+  ask it to block. Check the agent's operator documentation before deciding
+  which; `PetalBot` sat in this file until it turned out to be Huawei's Petal
+  Search crawler rather than an AI agent (their AI trainer is `PanguBot`).
+
+This also removes a false positive worth naming: blocking `OAI-SearchBot`
+alongside `search=yes` looks contradictory and is not — it is `ai-input=no`
+doing its job. Never report that as a conflict.
 
 ### Emitting the file
 
