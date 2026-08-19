@@ -149,6 +149,12 @@ When signals **disagree**, do not ask — the inconsistency *is* the finding:
   fetches that robots deliberately left alone.
 - robots disallows `*` + SEO clearly wanted → surface it.
 
+Where AI crawling is already disallowed, check **how** the agent list is
+sourced. A hardcoded array in `robots.ts` is a `fix`, not an `ok` — it was
+correct when written and rots from there. Replace it with
+`@geosuite/ai-crawler-bots`, but diff the two lists first and keep anything the
+package lacks; it is not a superset.
+
 Apply per `references/crawling-and-firewall.md`: robots for the polite signal,
 the firewall for enforcement, the two kept in agreement.
 

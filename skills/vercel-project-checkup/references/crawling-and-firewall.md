@@ -87,9 +87,41 @@ pnpx @geosuite/ai-crawler-bots robots https://example.com
 It fetches the live `robots.txt` and scores it per bot, which is the fastest way
 to confirm the deployed result matches the intent.
 
-A project already carrying a hand-maintained array is not broken — replacing it
-with the package is a maintenance improvement, so propose it as one rather than
-as a fix.
+### A hand-maintained array is a finding
+
+A hardcoded `const aiCrawlers = [...]` still works, so nothing is failing today
+— but it was accurate on the day it was written and has been decaying since.
+Report it as `fix` and propose the package. Do not leave it alone on the grounds
+that it is not broken; going stale silently is the whole problem.
+
+**Diff before replacing.** The package is not a superset of what a given project
+already lists — hand-written lists accumulate agents the package has not picked
+up, and dropping them is a real regression:
+
+```bash
+npm pack @geosuite/ai-crawler-bots && tar xzf geosuite-ai-crawler-bots-*.tgz
+node -e 'const b=require("./package/bots.json").map(x=>(x.uaToken??x.name).toLowerCase());
+const hard=require("./repo-list.json");
+console.log("only in repo:", hard.filter(s=>!b.includes(s.toLowerCase())));
+console.log("only in pkg :", b.filter(s=>!hard.map(h=>h.toLowerCase()).includes(s)));'
+```
+
+Take the **union**, so the package drives the maintained core and the extras
+survive:
+
+```ts
+import bots from "@geosuite/ai-crawler-bots/bots.json";
+
+const extras = ["Claude-SearchBot", "Claude-User", "Ai2Bot"];
+const aiCrawlers = [
+    ...new Set([...bots.map((bot) => bot.uaToken ?? bot.name), ...extras]),
+];
+```
+
+Keep `extras` short and say in the report what went into it and why, so the next
+run can retire an entry once the package covers it. Retired tokens are not worth
+pruning by hand — the package still ships `anthropic-ai` and `Claude-Web`, and a
+robots directive for a dead agent costs nothing.
 
 ### "AI crawling" is really three questions
 
