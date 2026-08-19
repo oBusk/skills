@@ -197,10 +197,12 @@ reservation ever does matter commercially for a project, that is a decision to
 raise with the user, and the canonical wording gets copied verbatim rather than
 summarised.
 
-### "AI crawling" is really three questions
+### What blocking each purpose costs
 
-`ai-crawlers.txt` tags every entry with a purpose, and the three want different
-answers. Offer the split when the user hesitates on the binary question:
+`ai-crawlers.txt` tags every entry with a purpose. The three carry very
+different costs, and `Content-Signal` gives only two knobs to control them —
+`ai-train` covers the first row, `ai-input` covers the other two. Use this to
+name the cost when asking:
 
 | `purpose` | Examples | What blocking costs you |
 | --- | --- | --- |
@@ -209,7 +211,8 @@ answers. Offer the split when the user hesitates on the binary question:
 | `user-agent` | ChatGPT-User, Perplexity-User, DuckAssistBot | Blocks a fetch **a human just asked for** |
 
 Most people who say "block AI crawlers" mean `training` only. Blocking all three
-is a coherent choice, but say out loud what the other two cost before applying.
+is a coherent choice — and the only coherent one once `ai_bots` is set to `deny`,
+since the ruleset cannot express anything narrower.
 
 To emit a training-only file, take the entries tagged `training`:
 

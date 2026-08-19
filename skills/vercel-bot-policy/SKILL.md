@@ -56,81 +56,92 @@ up front (`references/vercel-api.md`) — every step below reads from it.
 
 ## Step 1 — Crawling policy
 
-Two independent questions:
-
-**A. Should this project allow search-engine crawling?**
-**B. Should this project allow AI-crawler traffic?**
-
-Infer intent before asking. Signals, strongest first:
+Infer before asking. Signals, strongest first:
 
 | Signal | Reads as |
 | --- | --- |
-| `ai_bots` **`active: true`** and `action: deny` | AI crawling unwanted |
-| `ai_bots` absent, or `active: false` | AI crawling allowed (default) |
+| `ai_bots` **`active: true`** and `action: deny` | AI traffic already denied at the edge |
+| `ai_bots` absent, or `active: false` | AI traffic allowed (the default) |
 | robots disallowing `/` for `*` | search crawling unwanted |
 | robots naming AI user-agents under `disallow` | AI crawling unwanted |
 | No robots file, no firewall rules | **ambiguous — ask** |
 
 Read `active` before `action`. A disabled ruleset keeps its last `action`, so an
-inactive `ai_bots` can still read `deny` — treating that as intent inverts the
-answer. Inactive is inactive, whatever the action says. Both rulesets ship
-inactive; the dashboard labels that state **Allow** for AI Bots and **Off** for
-Bot Protection, so "Allow" is the default rather than a decision someone made.
+inactive `ai_bots` can still read `deny`; treating that as intent inverts the
+answer. Both rulesets ship inactive, and the dashboard labels that state
+**Allow** for AI Bots and **Off** for Bot Protection — "Allow" is the default,
+not a decision someone made.
 
-Ask only what the signals leave genuinely open, as two separate questions. If
-the user hesitates on B, offer the three-way split in
-`references/crawling.md` — most people who say "block AI" mean
-training bots only, not AI search or a fetch a human just asked for.
+### A. Search engines
 
-When signals **disagree**, do not ask — the inconsistency *is* the finding:
+Independent of everything below, and usually already settled: does this project
+want to be indexed by Google and Bing? Almost always yes. If not, that is
+`Disallow: /` for `*` plus `search=no`, and say plainly that robots will not keep
+a private site private — point at Deployment Protection instead.
 
-- `ai_bots: deny` + robots silent on AI → enforcement without the polite signal;
-  add the robots rules.
-- robots disallows AI + `ai_bots` off → a request bots may ignore, with nothing
-  enforcing it. Check *which* agents robots names before proposing anything: if
-  it disallows every AI agent, offer `ai_bots: deny`. If it names only training
-  bots — the common case — say so and **ask**, because the ruleset is
-  all-or-nothing and enabling it would also block AI search and user-requested
-  fetches that robots deliberately left alone.
-- robots disallows `*` + SEO clearly wanted → surface it.
+### B. AI — ask the firewall question first
 
-**C. `Content-Signal` is expected on every project.** It states policy by
-purpose rather than by agent name, so it covers crawlers no list knows about yet
-— the one non-rotting layer. Nothing enforces it. A missing `Content-Signal` is
-a `fix`, not an `ask`.
+**The edge decision dominates, so take it first.** `ai_bots` is all-or-nothing:
+`deny` blocks training crawlers, AI answer engines, and fetches a human
+explicitly asked for. Nothing finer can be enforced.
 
-**The signals decide; the agent list is generated from them.** Do not check the
-two for agreement — derive the list by purpose from `references/ai-crawlers.txt`
-and diff it against the project's array. Any difference is the finding, and the
-direction says whether the project under-enforces its declaration or is blocking
-something its signals never asked for.
+**B1. Should AI traffic be denied at the edge?**
 
-The vocabularies do not line up: `Content-Signal`'s `search` means conventional
-indexing and excludes AI summaries, so blocking `OAI-SearchBot` beside
-`search=yes` is `ai-input=no` working, **not** a contradiction. Translation table
-and the command are in `references/crawling.md`.
-Emit it from `robots.ts` via `rules[].other`, and **without** the Cloudflare
-policy preamble.
+**If yes** — everything downstream follows, and there is nothing more to ask.
+Robots blocks every agent in `references/ai-crawlers.txt`, and the signals are
+`ai-input=no,ai-train=no`. Do **not** offer the finer split here: a robots file
+claiming to allow AI search while the firewall denies it is simply untrue.
+Say out loud what the choice costs — no presence in ChatGPT or Perplexity
+answers, and user-requested fetches fail.
 
-Where AI crawling is already disallowed, diff the project's agent list against
-`references/ai-crawlers.txt`, which is the canonical copy this skill owns.
-Entries missing from the project are a `fix`; entries the project has and the
-canonical list lacks are a prompt to update the canonical list, not to delete
-from the project. The list is deliberately static and committed — no package
-dependency — and this checkup is its refresh mechanism.
+**If no** — robots is the only layer, the split becomes meaningful, and it is
+worth asking. Two questions, not one:
 
-Apply per `references/crawling.md`: robots for the polite signal,
-`references/firewall.md` for enforcement, the two kept in agreement. A static
-`public/robots.txt` and a `robots.ts` are both fine, but a project carrying
-**both** is serving one and silently ignoring the other — report that.
+| Ask | Sets | Blocks purposes |
+| --- | --- | --- |
+| Allow training on this content? | `ai-train` | `training` |
+| Allow AI answers to cite it live? | `ai-input` | `ai-search`, `user-agent` |
+
+Most people who say "block AI" mean training only. Name what the second question
+costs before they answer it: `no` removes the site from AI answer engines *and*
+blocks a fetch someone deliberately requested.
+
+### C. Derive, do not reconcile
+
+The answers set `Content-Signal`, and the agent list is **generated** from them —
+never maintained alongside them. Filter `references/ai-crawlers.txt` by the
+purposes above and diff against the project's array; any difference is the
+finding. The command and the translation table are in `references/crawling.md`.
+
+`Content-Signal` is expected on every project: it states policy by purpose rather
+than by agent name, so it covers crawlers no list knows about yet. A missing one
+is a `fix`, not an `ask`. Emit it from `robots.ts` via `rules[].other`, without
+the Cloudflare policy preamble.
+
+One false positive to never report: blocking `OAI-SearchBot` beside `search=yes`
+is not a contradiction. `Content-Signal`'s `search` means conventional indexing
+and excludes AI summaries, so that pairing is `ai-input=no` working correctly.
+
+A project carrying **both** a `public/robots.txt` and a `robots.ts` is serving
+one and silently ignoring the other — report it.
 
 ## Step 2 — Firewall policy
 
-**Budget first**: Hobby allows 3 custom rules and 1 rate-limit rule per
-project, Pro 40 and Enterprise 1000. Count existing
-rules before proposing new ones, and say what a proposal would consume.
+**Budget first**: 3 custom rules and 1 rate-limit rule per project on Hobby, 40
+on Pro, 1000 on Enterprise. Count existing rules before proposing new ones, and
+say what a proposal would consume.
 
-### 2a. Bot Protection
+### 2a. AI Bots ruleset
+
+Apply whatever **B1** decided — this step does not re-ask it. `deny` if AI
+traffic is unwanted, otherwise leave it inactive. `active: false` with a stale
+`action: deny` is not enforcement; if the intent is to deny, set both.
+
+Vercel maintains the underlying bot list, so new crawlers inherit the action
+with no change on your side — the one thing a committed agent list cannot do,
+and the reason the two layers are worth having together.
+
+### 2b. Bot Protection
 
 Default recommendation is **Challenge**. Verified bots (Googlebot, Bingbot) are
 excluded automatically, so Challenge does **not** cost SEO — that is never a
@@ -151,13 +162,13 @@ For a static marketing or portfolio site with no API routes and no proxy — the
 common case here — recommend Challenge without hesitation. Otherwise recommend
 Log and name the endpoint that made you hesitate.
 
-### 2b. Let crawlers reach `robots.txt`
+### 2c. Let crawlers reach `robots.txt`
 
 `ai_bots: deny` 403s `/robots.txt` itself, so the crawler cannot read the policy
 written for it. A project with `ai_bots` active and no bypass rule for
 `/robots.txt` is a `fix`. Why, and the recipe, in `references/firewall.md`.
 
-### 2c. Deny `.php` probes
+### 2d. Deny `.php` probes
 
 Every project here is Next.js, so a `.php` request is a vulnerability scanner.
 Check for a rule denying them; propose one if absent.
@@ -175,7 +186,7 @@ spends one of the plan's custom rules, so count the existing ones first.
 `rewrites` / `redirects` / `headers` / `cleanUrls` / `trailingSlash` in a way the
 schema does not catch — conditions in `references/firewall.md`.
 
-### 2d. Rate limiting
+### 2e. Rate limiting
 
 **Do not offer by default, and never add a blanket per-IP limit on `/`.** As a
 crawler defence it is weak — per-region counters, CDN-cached pages, shared-IP

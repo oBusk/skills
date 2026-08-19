@@ -78,11 +78,14 @@ Set the `ai_bots` managed ruleset to `deny` (see `vercel-api.md`). Vercel keeps
 that list current itself, so new crawlers inherit the action with no change on
 your side — which is exactly the part a hand-written robots list cannot do.
 
-The ruleset is all-or-nothing: it cannot express the `training`-only split
-above. Vercel documents it as covering AI bots that crawl "for training data,
-search purposes, or user-generated fetches", with Log and Deny as the only
-actions — so `deny` takes all three categories or none. Enforcing that split means leaving `ai_bots` off and writing custom rules
-against the `bot_name` condition — but treat that as a maybe, not a plan:
+The ruleset is all-or-nothing. Vercel documents it as covering AI bots that
+crawl "for training data, search purposes, or user-generated fetches", with Log
+and Deny as the only actions — so `deny` takes all three categories or none.
+That is why the edge decision is taken *first* in Step 1: once it is `deny`, the
+finer split in robots would be a claim the enforcement layer contradicts.
+
+Enforcing the split at the edge means leaving `ai_bots` off and writing custom
+rules against the `bot_name` condition — but treat that as a maybe, not a plan:
 
 - `bot_name` is not available on every plan. Confirm it is offered for this
   project before proposing rules built on it, rather than assuming the condition
