@@ -9,8 +9,14 @@ Personal collection of agent skills, installable with [`pnpx skills`](https://np
 pnpx skills add oBusk/skills
 
 # Install a specific skill directly
-pnpx skills add oBusk/skills --skill example-skill
+pnpx skills add oBusk/skills --skill vercel-project-checkup
 ```
+
+## Skills
+
+| Skill | What it does |
+| --- | --- |
+| [`vercel-project-checkup`](skills/vercel-project-checkup/) | Hygiene checkup for a Next.js project on Vercel — deps, audit, Tailwind v4, pnpm toolchain, Web Analytics, Fluid Compute, and crawling/firewall policy |
 
 ## Structure
 
