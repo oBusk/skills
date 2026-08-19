@@ -151,6 +151,12 @@ When signals **disagree**, do not ask — the inconsistency *is* the finding:
   fetches that robots deliberately left alone.
 - robots disallows `*` + SEO clearly wanted → surface it.
 
+**C. Should the file carry `Content-Signal`?** It states policy by purpose
+rather than by agent name, so it covers crawlers no list knows about yet — the
+one non-rotting layer. Nothing enforces it. Propose values matching the agent
+list already in the file, and treat the Cloudflare policy preamble as a separate
+question: worth it for an EU site reserving rights, boilerplate otherwise.
+
 Where AI crawling is already disallowed, check **how** the agent list is
 sourced. A hardcoded array in `robots.ts` is a `fix`, not an `ok` — it was
 correct when written and rots from there. Replace it with
@@ -158,7 +164,10 @@ correct when written and rots from there. Replace it with
 package lacks; it is not a superset.
 
 Apply per `references/crawling-and-firewall.md`: robots for the polite signal,
-the firewall for enforcement, the two kept in agreement.
+the firewall for enforcement, the two kept in agreement. That file also has the
+ladder for **how** to emit robots — `robots.ts` by default, a
+`app/robots.txt/route.ts` handler when the file needs comment lines, static
+`public/robots.txt` only as a last resort.
 
 ## Step 5 — Firewall policy
 

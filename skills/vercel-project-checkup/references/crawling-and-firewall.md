@@ -123,6 +123,85 @@ run can retire an entry once the package covers it. Retired tokens are not worth
 pruning by hand — the package still ships `anthropic-ai` and `Claude-Web`, and a
 robots directive for a dead agent costs nothing.
 
+### Content signals
+
+`Content-Signal` states policy by **purpose** rather than by agent name, on
+`User-agent: *`. That makes it the one part of a robots file that does not rot:
+it covers crawlers nobody has heard of yet, which is exactly the gap a
+maintained user-agent list cannot close.
+
+| Signal | Means |
+| --- | --- |
+| `search` | index and return links/excerpts, excluding AI summaries |
+| `ai-input` | real-time grounding — RAG, AI search answers |
+| `ai-train` | training or fine-tuning |
+
+Match the values to the agent list already in the file, or the two layers state
+different policies. A project blocking all three AI categories by user agent
+wants `search=yes,ai-input=no,ai-train=no`.
+
+Nothing enforces it. It is a declaration, published by Cloudflare in September
+2025 and not adopted by Google's parser, so propose it as a statement of intent
+and a machine-readable reservation of rights — never as a control. The firewall
+is still the only enforcement.
+
+### Choosing the robots output mechanism
+
+Three ways to emit the file. Pick the highest rung that covers what the project
+needs, and do not move a project down a rung without a reason.
+
+**1. `robots.ts` with `other`** — the default. Arbitrary directives pass through
+verbatim, so `Content-Signal` needs no static file:
+
+```ts
+{
+    userAgent: "*",
+    other: { "Content-Signal": "search=yes,ai-input=no,ai-train=no" },
+    allow: "/",
+}
+```
+
+Probe before relying on it — `other` is not in older Next releases, and a
+silently dropped directive looks identical to a working one:
+
+```bash
+grep -q "rule.other"   node_modules/next/dist/build/webpack/loaders/metadata/resolve-route-data.js   && echo supported
+```
+
+**2. `app/robots.txt/route.ts`** — when the file needs `#` comment lines. The
+serializer emits `Key: value` and nothing else, so a policy preamble is
+impossible from `robots.ts`. A route handler returning `text/plain` keeps the
+agent list generated from the package while controlling every byte. Next treats
+`/robots.txt` as dynamic-capable, so this does not conflict with metadata
+routing — but build once and fetch the route before committing.
+
+**3. `public/robots.txt`** — last resort. Static means the agent list is
+hand-maintained again, which is the problem the package exists to solve. Only
+for projects with no build-time access to the list.
+
+Report a project sitting on rung 3 with a hardcoded list as a `fix`; a project
+on rung 2 for the preamble is a deliberate choice, not drift.
+
+### The policy preamble
+
+Cloudflare's managed robots.txt prefixes the signals with a ~25-line comment
+block defining each signal and asserting a reservation of rights under Article 4
+of the EU copyright directive. Including it is a judgement call, not a default:
+
+- **Include it** when the site is EU-based and the reservation matters
+  commercially. Article 4(3)'s opt-out wants machine-readable reservation, and
+  bare signal values carry that weight only by reference to a policy the crawler
+  has to go and find.
+- **Skip it** when the signals are a statement of preference. It is 25 lines of
+  boilerplate on every request for a file most crawlers read mechanically.
+
+If included, copy the canonical wording verbatim rather than paraphrasing, and
+note the date it was taken so a later checkup can diff it. An abbreviation
+invites argument about whether it is an express reservation; matching the
+widely-deployed text does not. Flag to the user that this is the one item in the
+checkup with a legal dimension, and that a paraphrase is worth a lawyer's eye if
+the answer matters.
+
 ### "AI crawling" is really three questions
 
 `bots.json` carries a `purpose` field, and the three values want different
