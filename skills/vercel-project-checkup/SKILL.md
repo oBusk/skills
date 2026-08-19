@@ -130,7 +130,9 @@ Infer intent before asking. Signals, strongest first:
 
 Read `active` before `action`. A disabled ruleset keeps its last `action`, so an
 inactive `ai_bots` can still read `deny` — treating that as intent inverts the
-answer. Inactive is inactive, whatever the action says.
+answer. Inactive is inactive, whatever the action says. Both rulesets ship
+inactive; the dashboard labels that state **Allow** for AI Bots and **Off** for
+Bot Protection, so "Allow" is the default rather than a decision someone made.
 
 Ask only what the signals leave genuinely open, as two separate questions. If
 the user hesitates on B, offer the three-way split in

@@ -150,7 +150,9 @@ that list current itself, so new crawlers inherit the action with no change on
 your side — which is exactly the part a hand-written robots list cannot do.
 
 The ruleset is all-or-nothing: it cannot express the `training`-only split
-above. Enforcing that split means leaving `ai_bots` off and writing custom rules
+above. Vercel documents it as covering AI bots that crawl "for training data,
+search purposes, or user-generated fetches", with Log and Deny as the only
+actions — so `deny` takes all three categories or none. Enforcing that split means leaving `ai_bots` off and writing custom rules
 against the `bot_name` condition — but treat that as a maybe, not a plan:
 
 - `bot_name` is not available on every plan. Confirm it is offered for this
