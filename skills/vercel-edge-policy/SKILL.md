@@ -1,28 +1,30 @@
 ---
-name: vercel-project-checkup
-description: Hygiene checkup for a Next.js project hosted on Vercel — dependency freshness, pnpm audit, Tailwind v4, pnpm toolchain and workspace config, Web Analytics, Fluid Compute, and the search-engine / AI-crawler and firewall policy. Use when asked to "check", "audit", or "run a checkup on" a project, or to verify a project is fully updated and configured.
+name: vercel-edge-policy
+description: Crawling and firewall policy for a project hosted on Vercel — search-engine and AI-crawler rules, robots.txt and Content-Signal, Bot Protection, the AI Bots ruleset, scanner denies and rate limiting. Use when asked about robots, crawlers, AI bots, SEO blocking, the WAF, or the Vercel firewall.
 ---
 
-# Vercel project checkup
+# Vercel edge policy
 
 Read-only by default. Gather every finding first, report as one table, then ask
-before changing anything. Never edit files or publish firewall changes as a side
-effect of "checking".
+before changing anything. Firewall writes land in a **draft** and are not live
+until published — never publish as a side effect of "checking".
 
-Steps 1–2 read the repo, 3–5 read the platform. Details live in `references/`;
-this file is the decision logic.
+This skill owns what happens at the edge. Repo hygiene — dependencies, Tailwind,
+tsconfig, Web Analytics, Fluid Compute — belongs to `nextjs-project-checkup`,
+which is a separate skill and is **not** invoked from here. Run it yourself if
+you want both; a skill quietly skipping half a checklist is worse than two
+commands.
 
 ## Tool ladder for Vercel settings
 
 Use in this order. Do not skip down a rung until the current one fails.
 
 1. **`vercel api` via the CLI** — the primary path. An authenticated passthrough
-   to the REST API, it exposes everything the dashboard shows. Run as
+   to the REST API, it reads and writes the whole firewall config. Run as
    `pnpx vercel api …`. Recipes in `references/vercel-api.md`.
 2. **Vercel MCP** — only for `search_vercel_documentation` and `list_projects` /
-   `list_teams`. `get_project` returns a **trimmed** object with no analytics,
-   no resource config and no firewall data — never read configuration state
-   from it.
+   `list_teams`. `get_project` returns a **trimmed** object with **no firewall
+   data at all** — never read policy state from it.
 3. **`vercel firewall` subcommands** — avoid. `vercel firewall overview` fails
    outright on plans without IP Bypass (`IP Bypass is unavailable for this plan
    (404)`), taking the whole readout with it. `vercel api` has no plan gate.
@@ -47,71 +49,10 @@ Find the linked project and team id, in order:
   different project.
 - otherwise `list_projects` over MCP, or ask for the dashboard URL
 
-Then confirm auth with `pnpx vercel whoami`.
+Then confirm auth with `pnpx vercel whoami`. Read the firewall config once
+up front (`references/vercel-api.md`) — every step below reads from it.
 
-## Step 1 — Dependencies
-
-Three passes, reported separately. Full mechanics and the hold table are in
-`references/dependency-holds.md`.
-
-| Pass | Command | Reports |
-| --- | --- | --- |
-| 1 | `pnpm outdated --compatible` | in-range minors/patches — safe to take |
-| 2 | `pnpm outdated` | majors, minus held packages |
-| 3 | `latest_in_major <pkg> <major>` | new minors inside a held major |
-
-Held packages (node/`@types/node` 24, `typescript` 6, `lucide-react` 0) are
-deliberate, not stale — suppress them in pass 2. Pass 3 exists because they
-would otherwise fall through the gap between passes 1 and 2 and stop being
-checked at all.
-
-Read a declared range as intent, not as a style error: `~` on `typescript` is
-correct. Also run `pnpm audit` and report anything other than "No known
-vulnerabilities found".
-
-## Step 2 — Repo config
-
-Details for each in `references/workspace-config.md`.
-
-- **Tailwind v4 and the ESLint config** — one coupled job, per
-  `references/tailwind-and-eslint.md`. Tailwind at `^4` via
-  `@tailwindcss/postcss`; `eslint.config.mjs` using `defineConfig`, with
-  `settings.react.version` as the bare major `"19"` (eslint v10 only) and
-  `settings.tailwindcss.cssConfigPath` once on `@obusk/eslint-config-next@16.3`.
-  If the project has no Tailwind, skip every Tailwind item — not a finding.
-- **pnpm toolchain** — `packageManager` against `npm view pnpm version`, and the
-  `@obusk/pnpm-plugin-defaults` pin in `pnpm-workspace.yaml` `configDependencies`
-  (*not* `devDependencies`) against `npm view @obusk/pnpm-plugin-defaults version`.
-  A missing key is the finding.
-- **`@types/react` / `@types/react-dom`** — pinned in both `package.json` and
-  `overrides`; the two must match and must move together.
-- **Stale workspace entries** — dead audit overrides, and `trustPolicyExclude` /
-  `allowBuilds` entries naming versions no longer in the tree. A dead override
-  is proven by re-resolving without it, never by eyeballing versions.
-- **`next-env.d.ts`** — must be **both** gitignored and untracked.
-  Ignored-but-committed is the common broken state, since `.gitignore` does not
-  apply retroactively to tracked files.
-- **`tsconfig.json`** — `pnpm build` lets Next patch what it manages; compare the
-  rest against `references/tsconfig.reference.json`. Expect `paths` to differ.
-- **CI** — `pnpm/setup` (not `pnpm/action-setup`) with `cache: true`, and no
-  leftover `run_install` / `standalone`. Write action refs in **tag** form and
-  let Dependabot re-pin the SHA; never hand-resolve a commit hash.
-- **Analytics wiring** — `@vercel/analytics` in `dependencies` *and*
-  `<Analytics />` rendered in the root layout. The package alone reports nothing.
-
-## Step 3 — Platform settings
-
-One `vercel api` call to the project endpoint covers these:
-
-- **Web Analytics** — `webAnalytics.enabledAt` present means enabled. An object
-  with only an `id` and no `enabledAt` means **not** enabled. Cross-check
-  against Step 2: package installed but analytics off (or the reverse) is the
-  common broken state.
-- **Fluid Compute** — `defaultResourceConfig.fluid`. `false` is the finding.
-- Report when off-nominal: `speedInsights` (same `enabledAt` rule), `nodeVersion`
-  vs `engines.node`, and `ssoProtection` on a site meant to be public.
-
-## Step 4 — Crawling policy
+## Step 1 — Crawling policy
 
 Two independent questions:
 
@@ -170,13 +111,13 @@ the firewall for enforcement, the two kept in agreement. A static
 `public/robots.txt` and a `robots.ts` are both fine, but a project carrying
 **both** is serving one and silently ignoring the other — report that.
 
-## Step 5 — Firewall policy
+## Step 2 — Firewall policy
 
-Read the firewall config once (`references/vercel-api.md`). **Budget first**:
-Hobby allows 3 custom rules and 1 rate-limit rule per project. Count existing
+**Budget first**: Hobby allows 3 custom rules and 1 rate-limit rule per
+project, Pro 40 and Enterprise 1000. Count existing
 rules before proposing new ones, and say what a proposal would consume.
 
-### 5a. Bot Protection
+### 2a. Bot Protection
 
 Default recommendation is **Challenge**. Verified bots (Googlebot, Bingbot) are
 excluded automatically, so Challenge does **not** cost SEO — that is never a
@@ -197,14 +138,14 @@ For a static marketing or portfolio site with no API routes and no proxy — the
 common case here — recommend Challenge without hesitation. Otherwise recommend
 Log and name the endpoint that made you hesitate.
 
-### 5b. Let crawlers reach `robots.txt`
+### 2b. Let crawlers reach `robots.txt`
 
 Managed rulesets have no path scoping, so `ai_bots: deny` 403s `/robots.txt`
 itself — the crawler cannot read the policy that applies to it. A project with
 `ai_bots` active and no bypass rule for `/robots.txt` is a `fix`. Recipe in
 `references/crawling-and-firewall.md`.
 
-### 5c. Deny `.php` probes
+### 2c. Deny `.php` probes
 
 Every project here is Next.js, so a `.php` request is a vulnerability scanner.
 Check for a rule denying them; propose one if absent.
@@ -222,7 +163,7 @@ spends one of the plan's custom rules, so count the existing ones first.
 `rewrites` / `redirects` / `headers` / `cleanUrls` / `trailingSlash` in a way the
 schema does not catch — conditions in `references/crawling-and-firewall.md`.
 
-### 5d. Rate limiting
+### 2d. Rate limiting
 
 **Do not offer by default, and never add a blanket per-IP limit on `/`.** As a
 crawler defence it is weak — per-region counters, CDN-cached pages, shared-IP
@@ -242,32 +183,20 @@ harmful, scoped to that path:
 Otherwise report it as "not recommended" with the reason. Prefer `challenge`
 over `deny` on user-facing paths so a false positive is recoverable.
 
-## Step 6 — Report
+## Step 3 — Report
 
 One table: check, status (`ok` / `fix` / `ask` / `unknown`), detail. Put the
-Step 4 questions and any Step 5 hesitation below the table as explicit asks.
+Step 1 questions and any Step 2 hesitation below the table as explicit asks.
 Then stop and let the user choose what to apply.
 
 ## Applying fixes
 
 Only after the user chooses.
 
-- **Dependencies** — follow the ordered steps in
-  `references/dependency-holds.md`. Each has its own command and they are not
-  interchangeable; the config dependency goes first and the fresh lockfile last.
-- **Tailwind v4 → ESLint config** — a fixed sequence
-  (`references/tailwind-and-eslint.md`): `pnpx @tailwindcss/upgrade`, bump
-  `tailwind-merge`, review `globals.css`, then `@obusk/eslint-config-next@16.3`,
-  then `cssConfigPath`. Lint **fails between the first and fourth steps and that
-  is accepted** — carry on rather than fixing or reverting. If work stops in
-  that window, say so in the report.
-- **Other repo edits** (robots, `<Analytics />`, `vercel.json`, workflows) —
-  one concern per commit.
-- **Platform changes** — calls in `references/vercel-api.md`. Firewall changes
-  land in a **draft** and are not live until published; say so, and confirm
-  before publishing.
-
-Verify each change with `pnpm lint` (which chains prettier) and `pnpm build`,
-and **finish the checkup by running `pnpm lint` once more**. A green final lint
-is the exit condition; the Tailwind purgatory is the only place a red one is
-acceptable.
+- **Repo edits** (robots output, `vercel.json`) — one concern per commit, and
+  verify with `pnpm lint` and `pnpm build`.
+- **Firewall changes** — calls in `references/vercel-api.md`. They land in a
+  **draft** and are not live until published; say so, and confirm before
+  publishing.
+- **Verify from outside.** A firewall change is not done until a request proves
+  it. `curl -A "GPTBot/1.1"` against the affected path, after publishing.

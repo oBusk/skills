@@ -9,14 +9,15 @@ Personal collection of agent skills, installable with [`pnpx skills`](https://np
 pnpx skills add oBusk/skills
 
 # Install a specific skill directly
-pnpx skills add oBusk/skills --skill vercel-project-checkup
+pnpx skills add oBusk/skills --skill nextjs-project-checkup
 ```
 
 ## Skills
 
 | Skill | What it does |
 | --- | --- |
-| [`vercel-project-checkup`](skills/vercel-project-checkup/) | Hygiene checkup for a Next.js project on Vercel — deps, audit, Tailwind v4, pnpm toolchain, Web Analytics, Fluid Compute, and crawling/firewall policy |
+| [`nextjs-project-checkup`](skills/nextjs-project-checkup/) | Hygiene checkup for a Next.js project on Vercel — deps, audit, Tailwind v4, ESLint, pnpm toolchain, tsconfig, CI, Web Analytics, Fluid Compute |
+| [`vercel-edge-policy`](skills/vercel-edge-policy/) | Crawling and firewall policy — robots and Content-Signal, AI crawlers, Bot Protection, scanner denies, rate limiting |
 
 ## Structure
 

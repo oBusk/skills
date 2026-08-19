@@ -15,29 +15,6 @@ TEAM=team_xxxxxxxxxxxxxxxxxxxxxx   # orgId in the same file
 
 ## Reads
 
-### Everything about the project
-
-```bash
-pnpx vercel api "/v9/projects/$PRJ?teamId=$TEAM" --raw
-```
-
-Fields this checkup uses:
-
-| Field | Means |
-| --- | --- |
-| `webAnalytics.enabledAt` | Web Analytics on. Absent (even with an `id`) = off |
-| `speedInsights.enabledAt` | Speed Insights on, same rule |
-| `defaultResourceConfig.fluid` | Fluid Compute. `false` is the finding |
-| `defaultResourceConfig.functionDefaultMemoryType` | `standard_legacy` travels with fluid off |
-| `security.managedRules` | Summary of the managed rulesets |
-| `security.botIdEnabled` | BotID (separate product from Bot Protection) |
-| `nodeVersion` | Compare with `engines.node` |
-| `ssoProtection` | Non-null on a public site is worth surfacing |
-
-Note the `security.managedRules` summary keys the bot ruleset as `bot_filter`,
-while the firewall config below and the write API both call it `bot_protection`.
-Same ruleset.
-
 ### Full firewall config
 
 ```bash
@@ -107,22 +84,6 @@ JSON
 
 Other write actions follow the same envelope: `rules.update` (with `id`),
 `rules.remove`, `ips.insert`, `managedRules.update`.
-
-### Enable Fluid Compute
-
-```bash
-echo '{"defaultResourceConfig":{"fluid":true}}' \
-| pnpx vercel api "/v9/projects/$PRJ?teamId=$TEAM" -X PATCH --input -
-```
-
-Re-read the project afterwards and confirm `fluid` flipped;
-`functionDefaultMemoryType` should move off `standard_legacy`.
-
-### Web Analytics
-
-Enabling analytics from the API is not exposed as a documented endpoint. Do the
-dashboard toggle, or `claude-in-chrome`, and confirm by re-reading
-`webAnalytics.enabledAt`.
 
 ## Condition reference
 

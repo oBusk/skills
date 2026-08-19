@@ -61,7 +61,7 @@ worth buying.
 #### Checking a project against the list
 
 ```bash
-grep -oE '^[A-Za-z0-9_-]+' references/ai-crawlers.txt | grep -v '^#' | sort -u > /tmp/canon
+grep -oE '^[A-Za-z0-9_-]+' ai-crawlers.txt | grep -v '^#' | sort -u > /tmp/canon
 grep -oiE 'User-agent: *[A-Za-z0-9_-]+' public/robots.txt | sed 's/.*: *//' |
   sort -u > /tmp/project
 comm -23 /tmp/canon /tmp/project   # in canon, missing from project
@@ -172,7 +172,7 @@ is a coherent choice, but say out loud what the other two cost before applying.
 To emit a training-only file, take the entries tagged `training`:
 
 ```bash
-awk '$2 == "training" { print $1 }' references/ai-crawlers.txt
+awk '$2 == "training" { print $1 }' ai-crawlers.txt
 ```
 
 ### Let crawlers reach `robots.txt`
