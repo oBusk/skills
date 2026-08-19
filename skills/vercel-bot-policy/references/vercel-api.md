@@ -23,7 +23,7 @@ pnpx vercel api "/v1/security/firewall/config/active?projectId=$PRJ&teamId=$TEAM
 
 Returns `managedRules` (`bot_protection`, `ai_bots`, `owasp`, `vercel_ruleset`),
 `crs` (the OWASP sub-rules), `rules` (custom rules — count these against the
-plan budget), `ips`, and `changes` (unpublished draft edits).
+plan budget), `ips`, and `changes` (edits staged in the dashboard, if any).
 
 `/v1/security/firewall/config` (without `/active`) returns active plus draft.
 
@@ -141,17 +141,25 @@ All case-insensitive.
 `path` excludes the query string; `raw_path` includes it. Use `path` with `suf`
 for extension matching.
 
-## Draft vs published
+## Writes are live immediately
 
-Firewall writes land in a **draft**. They are not live until published.
+**A `PATCH` to `/v1/security/firewall/config` takes effect at once.** There is no
+staging step and nothing to publish. Verified on a live project: inserting a rule
+moved `/config` and `/config/active` to the same new version together, with
+`changes: []`, and the rule was enforcing on the next request.
 
-```bash
-pnpx vercel api "/v1/security/firewall/config?projectId=$PRJ&teamId=$TEAM" --raw   # inspect `changes`
-```
+The draft-and-publish flow people describe is the **dashboard**, which batches
+edits behind *Review Changes → Publish*. That does not apply to the API, and
+`vercel firewall publish` publishes dashboard-staged edits, not yours.
 
-Confirm with the user before publishing, and prefer `pnpx vercel firewall
-publish` for that one step — it is the rung-3 command that does work, since it
-does not touch the IP Bypass endpoint that breaks `firewall overview`.
+So the confirmation has to come **before the write**. Do not tell the user a
+change is staged, and do not offer to publish it later — by the time you would
+ask, production has already changed. Re-read `/config/active` afterwards to
+confirm what landed.
+
+`changes` on `/config` reflects edits staged in the dashboard. Empty is the
+normal state for API-only work; a non-empty `changes` means someone has unapplied
+edits in the UI, which is worth surfacing before writing over them.
 
 ## Known breakage
 

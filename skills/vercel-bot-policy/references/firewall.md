@@ -4,7 +4,8 @@ Enforcement at the edge. Payloads for every write are in `vercel-api.md`; this
 file is when to reach for each and what it costs. Crawl policy — robots,
 `Content-Signal`, the agent list — is in `crawling.md`.
 
-Every write lands in a draft and is not live until published.
+Every write here changes production the moment it is sent. Confirm before
+writing, not after.
 
 ## Plan budgets
 
@@ -62,7 +63,7 @@ JSON
 ```
 
 Check it applies **before** the deny rules; `rules.priority` reorders if not.
-Budget: one rule. Verify after publishing:
+Budget: one rule. Verify:
 
 ```bash
 curl -sS -o /dev/null -w '%{http_code}
@@ -104,8 +105,8 @@ rules the project cannot create.
 Use `rules.insert` from `vercel-api.md` — the payload there is already this
 rule, matching `path` with `op: "suf"` on `.php`. Keeping it in the firewall
 puts it alongside Bot Protection and the AI Bots ruleset, so the whole edge
-policy reads from one place, and it takes effect on publish rather than waiting
-for the next deploy.
+policy reads from one place, and it takes effect at once rather than waiting for
+the next deploy.
 
 It costs one rule. Count the existing `rules` first and say what it will
 consume.
@@ -140,7 +141,7 @@ scanner-noise cleanup.
 curl -s -o /dev/null -w '%{http_code}\n' https://example.com/wp-login.php
 ```
 
-Verify after publishing, not after the write.
+Verify straight after the write — there is no publish step to wait for.
 
 ### Widening it
 

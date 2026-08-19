@@ -6,8 +6,9 @@ description: Bot and crawler policy for a project hosted on Vercel — whether s
 # Vercel bot policy
 
 Read-only by default. Gather every finding first, report as one table, then ask
-before changing anything. Firewall writes land in a **draft** and are not live
-until published — never publish as a side effect of "checking".
+before changing anything. **Firewall writes are live the instant they are sent** —
+there is no draft and nothing to publish, so the confirmation happens before the
+write or not at all. Never write as a side effect of "checking".
 
 This skill owns which automated clients may reach the site and what stops them:
 search crawlers, AI crawlers, and vulnerability scanners.
@@ -211,6 +212,6 @@ Only after the user chooses.
 - **Repo edits** (robots output, `vercel.json`) — one concern per commit, and
   verify with `pnpm lint` and `pnpm build`.
 - **Firewall changes** — calls in `references/vercel-api.md`. Confirm before
-  publishing the draft.
+  sending; production changes on the write.
 - **Verify from outside.** A firewall change is not done until a request proves
-  it. `curl -A "GPTBot/1.1"` against the affected path, after publishing.
+  it. `curl -A "GPTBot/1.1"` against the affected path, straight after the write.
