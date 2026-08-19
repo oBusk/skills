@@ -145,12 +145,16 @@ It costs one rule against the plan budget — three on Hobby. Count the existing
 
 ### Why not `vercel.json`
 
-`routes[].mitigate` expresses the same deny without spending a rule, and it is
-version-controlled and applies to previews. It is still not the default here:
-`routes` is the **legacy** routing property and cannot coexist with `rewrites`,
-`redirects`, `headers`, `cleanUrls` or `trailingSlash`. The JSON schema does not
-encode that constraint, so `$schema` autocomplete stays silent and the
-deployment fails only when it is pushed.
+`routes[].mitigate` expresses the same deny, is version-controlled, and applies
+to previews. It also draws on a different budget — "Routes created per
+Deployment", 2048 on Hobby and Pro — rather than the three WAF custom rules. That
+pool is shared with every route the framework generates (dynamic segments,
+`rewrites`, `redirects`, `headers`), so it is not free, just far from binding.
+
+It is still not the default here: `routes` is the **legacy** routing property and
+cannot coexist with `rewrites`, `redirects`, `headers`, `cleanUrls` or
+`trailingSlash`. The JSON schema does not encode that constraint, so `$schema`
+autocomplete stays silent and the deployment fails only when it is pushed.
 
 Reach for it only when the custom-rule budget is genuinely full, and check for
 those keys first:
@@ -187,11 +191,17 @@ justify it:
 
 | Resource | Hobby | Pro | Enterprise |
 | --- | --- | --- | --- |
-| Custom firewall rules | 3 per project | — | — |
+| Custom firewall rules | 3 per project | 40 | 1000 |
+| Project-level IP blocks | 3 | 100 | 1000 |
+| `vercel.json` routes | 2048 per deployment | 2048 | custom |
 | Rate-limit rules | 1 per project | 40 | 1000 |
 | Rate-limit keys | IP, JA4 | IP, JA4 | + User Agent, arbitrary headers |
 | Rate-limit algorithm | Fixed window | Fixed window | + Token bucket |
 | Rate-limit window | 10s – 10min | 10s – 10min | 10s – 1hr |
+
+Custom-rule and IP-block figures come from the limits table on
+`/docs/vercel-firewall/vercel-waf`. The routes figure is a **deployment** budget,
+not a firewall one, and it counts framework-generated routes too.
 
 Count `rules` in the firewall config before proposing anything, and say what a
 proposal will consume. On Hobby, three rules go fast.

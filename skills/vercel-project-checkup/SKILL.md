@@ -192,10 +192,10 @@ a security fix.
 Add it as a **WAF custom rule** (`rules.insert` in `references/vercel-api.md`),
 so the whole edge policy lives in one place and it applies without a deploy. It
 spends one of the plan's custom rules, so count the existing ones first.
-`vercel.json` `routes[].mitigate` is the budget-free fallback, but `routes`
-conflicts with `rewrites` / `redirects` / `headers` / `cleanUrls` /
-`trailingSlash` in a way the schema does not catch — conditions in
-`references/crawling-and-firewall.md`.
+`vercel.json` `routes[].mitigate` is the fallback: it spends a deployment route
+(2048 available) instead of a firewall rule, but `routes` conflicts with
+`rewrites` / `redirects` / `headers` / `cleanUrls` / `trailingSlash` in a way the
+schema does not catch — conditions in `references/crawling-and-firewall.md`.
 
 ### 5c. Rate limiting
 
