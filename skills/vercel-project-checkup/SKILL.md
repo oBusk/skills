@@ -151,23 +151,24 @@ When signals **disagree**, do not ask — the inconsistency *is* the finding:
   fetches that robots deliberately left alone.
 - robots disallows `*` + SEO clearly wanted → surface it.
 
-**C. Should the file carry `Content-Signal`?** It states policy by purpose
-rather than by agent name, so it covers crawlers no list knows about yet — the
-one non-rotting layer. Nothing enforces it. Propose values matching the agent
-list already in the file, and treat the Cloudflare policy preamble as a separate
-question: worth it for an EU site reserving rights, boilerplate otherwise.
+**C. `Content-Signal` is expected on every project.** It states policy by
+purpose rather than by agent name, so it covers crawlers no list knows about yet
+— the one non-rotting layer. Nothing enforces it. Set values matching the agent
+list already in the file; a missing `Content-Signal` is a `fix`, not an `ask`.
+Emit it from `robots.ts` via `rules[].other`, and **without** the Cloudflare
+policy preamble.
 
-Where AI crawling is already disallowed, check **how** the agent list is
-sourced. A hardcoded array in `robots.ts` is a `fix`, not an `ok` — it was
-correct when written and rots from there. Replace it with
-`@geosuite/ai-crawler-bots`, but diff the two lists first and keep anything the
-package lacks; it is not a superset.
+Where AI crawling is already disallowed, diff the project's agent list against
+`references/ai-crawlers.txt`, which is the canonical copy this skill owns.
+Entries missing from the project are a `fix`; entries the project has and the
+canonical list lacks are a prompt to update the canonical list, not to delete
+from the project. The list is deliberately static and committed — no package
+dependency — and this checkup is its refresh mechanism.
 
 Apply per `references/crawling-and-firewall.md`: robots for the polite signal,
-the firewall for enforcement, the two kept in agreement. That file also has the
-ladder for **how** to emit robots — `robots.ts` by default, a
-`app/robots.txt/route.ts` handler when the file needs comment lines, static
-`public/robots.txt` only as a last resort.
+the firewall for enforcement, the two kept in agreement. A static
+`public/robots.txt` and a `robots.ts` are both fine, but a project carrying
+**both** is serving one and silently ignoring the other — report that.
 
 ## Step 5 — Firewall policy
 

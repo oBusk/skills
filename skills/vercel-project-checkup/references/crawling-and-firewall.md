@@ -41,87 +41,44 @@ robots as the control.
 
 ### The user-agent list
 
-Maintaining a hand-written list rots — operators split, rename and retire agents
-constantly (`anthropic-ai` and `Claude-Web` gave way to `ClaudeBot`;
-`OAI-SearchBot` and `ChatGPT-User` split off from `GPTBot`). Source it from
-[`@geosuite/ai-crawler-bots`](https://npmx.dev/package-code/@geosuite/ai-crawler-bots),
-a curated list where each entry links to the operator's own documentation.
+The list is **static, committed, and owned by this skill**. The canonical copy is
+`ai-crawlers.txt` in this directory; each project carries its own copy in its
+robots output. The checkup is the refresh mechanism — diff the project against
+the canonical list every run and report drift in both directions.
 
-It ships the data as a JSON export, so read the agents at build time rather than
-pasting them:
+Do not add a package dependency for this. `@geosuite/ai-crawler-bots` was
+evaluated and rejected: as of 0.6.3 it ships 24 entries and is missing
+`Claude-SearchBot` and `Claude-User`, so it blocks Anthropic training while
+silently allowing the search and user-fetch surfaces. It is a 2-star,
+single-maintainer repo with no outside contributors. It remains useful as *one*
+cross-check source when refreshing `ai-crawlers.txt`, and nothing more.
 
-```bash
-pnpm add -D @geosuite/ai-crawler-bots
-```
+This is best-effort by nature. Nothing enforces robots, the list can never be
+complete, and `Content-Signal` (below) is the layer that actually covers agents
+nobody has named yet. Precision beyond "refresh it when the checkup runs" is not
+worth buying.
 
-```ts
-import type { MetadataRoute } from "next";
-import bots from "@geosuite/ai-crawler-bots/bots.json";
-
-const aiCrawlers = bots.map((bot) => bot.uaToken ?? bot.name);
-
-export default function robots(): MetadataRoute.Robots {
-    return {
-        rules: [
-            { userAgent: "*", allow: "/" },
-            { userAgent: aiCrawlers, disallow: "/" },
-        ],
-    };
-}
-```
-
-`uaToken ?? bot.name` is deliberate, not defensive. `Google-Extended` and
-`Applebot-Extended` carry `uaToken: null` because they are policy-only tokens
-with no separate HTTP user-agent — they exist *only* as robots.txt directives.
-Mapping over `uaToken` alone silently drops both, which are the two entries that
-opt you out of Gemini and Apple Intelligence training. Verify the shape against
-the installed version (as of 0.6.3: `id`, `name`, `ua`, `uaToken`, `owner`,
-`purpose`, `docsUrl`, `robotsDirective`, `notes`; 24 entries).
-
-The package also has a CLI worth running once against the deployed site:
+#### Checking a project against the list
 
 ```bash
-pnpx @geosuite/ai-crawler-bots robots https://example.com
+grep -oE '^[A-Za-z0-9_-]+' references/ai-crawlers.txt | grep -v '^#' | sort -u > /tmp/canon
+grep -oiE 'User-agent: *[A-Za-z0-9_-]+' public/robots.txt | sed 's/.*: *//' |
+  sort -u > /tmp/project
+comm -23 /tmp/canon /tmp/project   # in canon, missing from project
+comm -13 /tmp/canon /tmp/project   # in project, not in canon
 ```
 
-It fetches the live `robots.txt` and scores it per bot, which is the fastest way
-to confirm the deployed result matches the intent.
+Missing-from-project is a `fix`. Present-in-project-but-not-canon is a prompt to
+**update `ai-crawlers.txt`**, not to delete from the project — the project may
+have caught something first.
 
-### A hand-maintained array is a finding
+#### Refreshing the canonical list
 
-A hardcoded `const aiCrawlers = [...]` still works, so nothing is failing today
-— but it was accurate on the day it was written and has been decaying since.
-Report it as `fix` and propose the package. Do not leave it alone on the grounds
-that it is not broken; going stale silently is the whole problem.
-
-**Diff before replacing.** The package is not a superset of what a given project
-already lists — hand-written lists accumulate agents the package has not picked
-up, and dropping them is a real regression:
-
-```bash
-npm pack @geosuite/ai-crawler-bots && tar xzf geosuite-ai-crawler-bots-*.tgz
-node -e 'const b=require("./package/bots.json").map(x=>(x.uaToken??x.name).toLowerCase());
-const hard=require("./repo-list.json");
-console.log("only in repo:", hard.filter(s=>!b.includes(s.toLowerCase())));
-console.log("only in pkg :", b.filter(s=>!hard.map(h=>h.toLowerCase()).includes(s)));'
-```
-
-Take the **union**, so the package drives the maintained core and the extras
-survive:
-
-```ts
-import bots from "@geosuite/ai-crawler-bots/bots.json";
-
-const extras = ["Claude-SearchBot", "Claude-User", "Ai2Bot"];
-const aiCrawlers = [
-    ...new Set([...bots.map((bot) => bot.uaToken ?? bot.name), ...extras]),
-];
-```
-
-Keep `extras` short and say in the report what went into it and why, so the next
-run can retire an entry once the package covers it. Retired tokens are not worth
-pruning by hand — the package still ships `anthropic-ai` and `Claude-Web`, and a
-robots directive for a dead agent costs nothing.
+Only when the user asks, or when a project turns up an agent the list lacks.
+Check operator documentation rather than aggregators, note the date in the file
+header, and say in the report which entries moved. Retired tokens
+(`anthropic-ai`, `Claude-Web`) stay: a directive for a dead agent costs nothing
+and old robots.txt files in the wild still carry them.
 
 ### Content signals
 
@@ -145,13 +102,18 @@ Nothing enforces it. It is a declaration, published by Cloudflare in September
 and a machine-readable reservation of rights — never as a control. The firewall
 is still the only enforcement.
 
-### Choosing the robots output mechanism
+### Emitting the file
 
-Three ways to emit the file. Pick the highest rung that covers what the project
-needs, and do not move a project down a rung without a reason.
+Either mechanism is fine now that the list is static. Do not churn a project
+from one to the other; pick per project and leave it.
 
-**1. `robots.ts` with `other`** — the default. Arbitrary directives pass through
-verbatim, so `Content-Signal` needs no static file:
+**`public/robots.txt`** — a plain committed file. Simplest to read, shows the
+exact served bytes in a diff, and allows `#` comments if a project ever wants
+them.
+
+**`robots.ts` with a literal array** — keeps Next conventions and type checking.
+`Content-Signal` goes through `rules[].other`, which passes arbitrary directives
+verbatim:
 
 ```ts
 {
@@ -161,66 +123,41 @@ verbatim, so `Content-Signal` needs no static file:
 }
 ```
 
-Probe before relying on it — `other` is not in older Next releases, and a
-silently dropped directive looks identical to a working one:
+Probe before relying on `other` — it is absent in older Next, and a silently
+dropped directive looks identical to a working one:
 
 ```bash
-grep -q "rule.other"   node_modules/next/dist/build/webpack/loaders/metadata/resolve-route-data.js   && echo supported
+F=node_modules/next/dist/build/webpack/loaders/metadata/resolve-route-data.js
+grep -q "rule.other" "$F" && echo supported
 ```
 
-**2. `app/robots.txt/route.ts`** — when the file needs `#` comment lines. The
-serializer emits `Key: value` and nothing else, so a policy preamble is
-impossible from `robots.ts`. A route handler returning `text/plain` keeps the
-agent list generated from the package while controlling every byte. Next treats
-`/robots.txt` as dynamic-capable, so this does not conflict with metadata
-routing — but build once and confirm it landed in the **prerender** manifest. A
-route handler that does not prerender is a function invocation on every
-`robots.txt` request, which is the one real cost difference on this ladder.
+**Never both.** A project with `public/robots.txt` *and* `app/robots.ts` is
+serving one and silently ignoring the other. Check for the pair and report it —
+the dead file will drift, and whichever wins is not obvious from reading the
+repo.
 
-**3. `public/robots.txt`** — the agent list becomes hand-maintained again, which
-is the problem the package exists to solve. Reach for it only when there is no
-build-time access to the list.
+Cost is not a factor either way: `robots.ts` prerenders to a static file, so
+nothing runs per request and it spends one static route against a budget of
+2048.
 
-### What the ladder is and is not about
-
-It ranks by **maintenance**, not cost. All three are effectively free:
-`robots.ts` prerenders to a static file — confirm with
-
-```bash
-node -e 'console.log(Object.keys(require("./.next/prerender-manifest.json").routes))'   | grep robots
-```
-
-— so nothing runs per request, and it registers one static route against a
-budget of 2048. `public/` registers none. That difference is not a reason to
-choose anything.
-
-Do not argue for rung 3 on cost grounds. Report a project sitting there with a
-hardcoded list as a `fix`; a project on rung 2 for the preamble is a deliberate
-choice, not drift.
-
-### The policy preamble
+### Skip the policy preamble
 
 Cloudflare's managed robots.txt prefixes the signals with a ~25-line comment
 block defining each signal and asserting a reservation of rights under Article 4
-of the EU copyright directive. Including it is a judgement call, not a default:
+of the EU copyright directive. **These projects do not include it.** Emit the
+`Content-Signal` values alone.
 
-- **Include it** when the site is EU-based and the reservation matters
-  commercially. Article 4(3)'s opt-out wants machine-readable reservation, and
-  bare signal values carry that weight only by reference to a policy the crawler
-  has to go and find.
-- **Skip it** when the signals are a statement of preference. It is 25 lines of
-  boilerplate on every request for a file most crawlers read mechanically.
-
-If included, copy the canonical wording verbatim rather than paraphrasing, and
-note the date it was taken so a later checkup can diff it. An abbreviation
-invites argument about whether it is an express reservation; matching the
-widely-deployed text does not. Flag to the user that this is the one item in the
-checkup with a legal dimension, and that a paraphrase is worth a lawyer's eye if
-the answer matters.
+The signals are a statement of preference here, not a rights reservation being
+relied on, and the block is 25 lines of boilerplate in every robots.txt. Do not
+re-propose it on a later run, and do not paraphrase it into a shorter notice —
+a partial version carries none of the legal weight and all of the noise. If the
+reservation ever does matter commercially for a project, that is a decision to
+raise with the user, and the canonical wording gets copied verbatim rather than
+summarised.
 
 ### "AI crawling" is really three questions
 
-`bots.json` carries a `purpose` field, and the three values want different
+`ai-crawlers.txt` tags every entry with a purpose, and the three want different
 answers. Offer the split when the user hesitates on the binary question:
 
 | `purpose` | Examples | What blocking costs you |
@@ -232,10 +169,10 @@ answers. Offer the split when the user hesitates on the binary question:
 Most people who say "block AI crawlers" mean `training` only. Blocking all three
 is a coherent choice, but say out loud what the other two cost before applying.
 
-```ts
-const aiCrawlers = bots
-    .filter((bot) => bot.purpose === "training")
-    .map((bot) => bot.uaToken ?? bot.name);
+To emit a training-only file, take the entries tagged `training`:
+
+```bash
+awk '$2 == "training" { print $1 }' references/ai-crawlers.txt
 ```
 
 ### Enforcement
