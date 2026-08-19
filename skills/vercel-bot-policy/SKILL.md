@@ -111,16 +111,12 @@ blocks a fetch someone deliberately requested.
 The answers set `Content-Signal`, and the agent list is **generated** from them —
 never maintained alongside them. Filter `references/ai-crawlers.txt` by the
 purposes above and diff against the project's array; any difference is the
-finding. The command and the translation table are in `references/crawling.md`.
+finding. The command and the translation table are in `references/crawling.md`,
+including the one pairing that looks like a conflict and is not.
 
-`Content-Signal` is expected on every project: it states policy by purpose rather
-than by agent name, so it covers crawlers no list knows about yet. A missing one
-is a `fix`, not an `ask`. Emit it from `robots.ts` via `rules[].other`, without
-the Cloudflare policy preamble.
-
-One false positive to never report: blocking `OAI-SearchBot` beside `search=yes`
-is not a contradiction. `Content-Signal`'s `search` means conventional indexing
-and excludes AI summaries, so that pairing is `ai-input=no` working correctly.
+`Content-Signal` is expected on every project — it is the only layer that covers
+crawlers no list knows about yet, so a missing one is a `fix`, not an `ask`.
+Emit it from `robots.ts` via `rules[].other`, without the Cloudflare preamble.
 
 A project carrying **both** a `public/robots.txt` and a `robots.ts` is serving
 one and silently ignoring the other — report it.
@@ -136,10 +132,6 @@ say what a proposal would consume.
 Apply whatever **B1** decided — this step does not re-ask it. `deny` if AI
 traffic is unwanted, otherwise leave it inactive. `active: false` with a stale
 `action: deny` is not enforcement; if the intent is to deny, set both.
-
-Vercel maintains the underlying bot list, so new crawlers inherit the action
-with no change on your side — the one thing a committed agent list cannot do,
-and the reason the two layers are worth having together.
 
 ### 2b. Bot Protection
 
@@ -218,8 +210,7 @@ Only after the user chooses.
 
 - **Repo edits** (robots output, `vercel.json`) — one concern per commit, and
   verify with `pnpm lint` and `pnpm build`.
-- **Firewall changes** — calls in `references/vercel-api.md`. They land in a
-  **draft** and are not live until published; say so, and confirm before
-  publishing.
+- **Firewall changes** — calls in `references/vercel-api.md`. Confirm before
+  publishing the draft.
 - **Verify from outside.** A firewall change is not done until a request proves
   it. `curl -A "GPTBot/1.1"` against the affected path, after publishing.

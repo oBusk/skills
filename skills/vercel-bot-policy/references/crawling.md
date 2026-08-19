@@ -93,10 +93,6 @@ maintained user-agent list cannot close.
 | `ai-input` | real-time grounding — RAG, AI search answers |
 | `ai-train` | training or fine-tuning |
 
-Match the values to the agent list already in the file, or the two layers state
-different policies. A project blocking all three AI categories by user agent
-wants `search=yes,ai-input=no,ai-train=no`.
-
 Nothing enforces it. It is a declaration, published by Cloudflare in September
 2025 and not adopted by Google's parser, so propose it as a statement of intent
 and a machine-readable reservation of rights — never as a control. The firewall
@@ -125,8 +121,7 @@ Then generate:
 BLOCK='training|ai-search|user-agent'   # ai-train=no and ai-input=no
 BLOCK='training'                        # ai-train=no only, the common case
 
-awk -v p="^($BLOCK)$" '$1 !~ /^#/ && $2 ~ p { printf "    \"%s\",
-", $1 }' ai-crawlers.txt
+awk -v p="^($BLOCK)$" '$1 !~ /^#/ && $2 ~ p { print "    \"" $1 "\"," }' ai-crawlers.txt
 ```
 
 Diff the output against the project's array. **Any difference is the finding**,
@@ -173,10 +168,8 @@ F=node_modules/next/dist/build/webpack/loaders/metadata/resolve-route-data.js
 grep -q "rule.other" "$F" && echo supported
 ```
 
-**Never both.** A project with `public/robots.txt` *and* `app/robots.ts` is
-serving one and silently ignoring the other. Check for the pair and report it —
-the dead file will drift, and whichever wins is not obvious from reading the
-repo.
+**Never both.** The dead one drifts, and which wins is not obvious from reading
+the repo.
 
 Cost is not a factor either way: `robots.ts` prerenders to a static file, so
 nothing runs per request and it spends one static route against a budget of

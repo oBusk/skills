@@ -122,8 +122,8 @@ policy were not checked, so a clean report is never mistaken for a full one.
 Only after the user chooses.
 
 - **Dependencies** — follow the ordered steps in
-  `references/dependency-holds.md`. Each has its own command and they are not
-  interchangeable; the config dependency goes first and the fresh lockfile last.
+  `references/dependency-holds.md`; the config dependency goes first and the
+  fresh lockfile last.
 - **Tailwind v4 → ESLint config** — a fixed sequence
   (`references/tailwind-and-eslint.md`): `pnpx @tailwindcss/upgrade`, bump
   `tailwind-merge`, review `globals.css`, then `@obusk/eslint-config-next@16.3`,
