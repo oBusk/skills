@@ -17,7 +17,7 @@ pnpx skills add oBusk/skills --skill nextjs-project-checkup
 | Skill | What it does |
 | --- | --- |
 | [`nextjs-project-checkup`](skills/nextjs-project-checkup/) | Hygiene checkup for a Next.js project on Vercel — deps, audit, Tailwind v4, ESLint, pnpm toolchain, tsconfig, CI, Web Analytics, Fluid Compute |
-| [`vercel-edge-policy`](skills/vercel-edge-policy/) | Crawling and firewall policy — robots and Content-Signal, AI crawlers, Bot Protection, scanner denies, rate limiting |
+| [`vercel-bot-policy`](skills/vercel-bot-policy/) | Bot and crawler policy — robots and Content-Signal, AI crawlers, Bot Protection, scanner denies, rate limiting |
 
 ## Structure
 

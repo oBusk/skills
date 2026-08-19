@@ -1,6 +1,6 @@
 ---
 name: nextjs-project-checkup
-description: Hygiene checkup for a Next.js project hosted on Vercel — dependency freshness, pnpm audit, Tailwind v4, ESLint config, pnpm toolchain and workspace config, tsconfig, CI, Web Analytics and Fluid Compute. Use when asked to "check", "audit", or "run a checkup on" a project, or to verify a project is fully updated and configured. Crawling and firewall policy live in the separate vercel-edge-policy skill.
+description: Hygiene checkup for a Next.js project hosted on Vercel — dependency freshness, pnpm audit, Tailwind v4, ESLint config, pnpm toolchain and workspace config, tsconfig, CI, Web Analytics and Fluid Compute. Use when asked to "check", "audit", or "run a checkup on" a project, or to verify a project is fully updated and configured. Crawling and firewall policy live in the separate vercel-bot-policy skill.
 ---
 
 # Next.js project checkup
@@ -114,8 +114,8 @@ needing a decision below the table as an explicit ask, then stop and let the
 user choose what to apply.
 
 Crawling and firewall policy are **not** in scope here — they belong to the
-`vercel-edge-policy` skill. Do not invoke it; say in the report that edge policy
-was not checked, so a clean report is never mistaken for a full one.
+`vercel-bot-policy` skill. Do not invoke it; say in the report that bot and firewall
+policy were not checked, so a clean report is never mistaken for a full one.
 
 ## Applying fixes
 

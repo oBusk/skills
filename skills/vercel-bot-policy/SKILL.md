@@ -1,19 +1,21 @@
 ---
-name: vercel-edge-policy
-description: Crawling and firewall policy for a project hosted on Vercel — search-engine and AI-crawler rules, robots.txt and Content-Signal, Bot Protection, the AI Bots ruleset, scanner denies and rate limiting. Use when asked about robots, crawlers, AI bots, SEO blocking, the WAF, or the Vercel firewall.
+name: vercel-bot-policy
+description: Bot and crawler policy for a project hosted on Vercel — whether search engines and AI crawlers may crawl, robots.txt and Content-Signal, Bot Protection, the AI Bots ruleset, denying vulnerability scanners, and rate limiting. Use when asked about bots, robots.txt, crawlers, AI training, SEO blocking, the WAF, or the Vercel firewall.
 ---
 
-# Vercel edge policy
+# Vercel bot policy
 
 Read-only by default. Gather every finding first, report as one table, then ask
 before changing anything. Firewall writes land in a **draft** and are not live
 until published — never publish as a side effect of "checking".
 
-This skill owns what happens at the edge. Repo hygiene — dependencies, Tailwind,
-tsconfig, Web Analytics, Fluid Compute — belongs to `nextjs-project-checkup`,
-which is a separate skill and is **not** invoked from here. Run it yourself if
-you want both; a skill quietly skipping half a checklist is worse than two
-commands.
+This skill owns which automated clients may reach the site and what stops them:
+search crawlers, AI crawlers, and vulnerability scanners.
+
+Repo hygiene — dependencies, Tailwind, tsconfig, Web Analytics, Fluid Compute —
+belongs to `nextjs-project-checkup`, a separate skill that is **not** invoked
+from here. Run it yourself if you want both; a skill quietly skipping half a
+checklist is worse than two commands.
 
 ## Tool ladder for Vercel settings
 
@@ -155,7 +157,7 @@ cutting scanner noise out of logs and analytics. Say that rather than calling it
 a security fix.
 
 Add it as a **WAF custom rule** (`rules.insert` in `references/vercel-api.md`),
-so the whole edge policy lives in one place and it applies without a deploy. It
+so the whole policy lives in one place and it applies without a deploy. It
 spends one of the plan's custom rules, so count the existing ones first.
 `vercel.json` `routes[].mitigate` is the fallback: it spends a deployment route
 (2048 available) instead of a firewall rule, but `routes` conflicts with
