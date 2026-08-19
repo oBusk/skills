@@ -173,14 +173,30 @@ serializer emits `Key: value` and nothing else, so a policy preamble is
 impossible from `robots.ts`. A route handler returning `text/plain` keeps the
 agent list generated from the package while controlling every byte. Next treats
 `/robots.txt` as dynamic-capable, so this does not conflict with metadata
-routing — but build once and fetch the route before committing.
+routing — but build once and confirm it landed in the **prerender** manifest. A
+route handler that does not prerender is a function invocation on every
+`robots.txt` request, which is the one real cost difference on this ladder.
 
-**3. `public/robots.txt`** — last resort. Static means the agent list is
-hand-maintained again, which is the problem the package exists to solve. Only
-for projects with no build-time access to the list.
+**3. `public/robots.txt`** — the agent list becomes hand-maintained again, which
+is the problem the package exists to solve. Reach for it only when there is no
+build-time access to the list.
 
-Report a project sitting on rung 3 with a hardcoded list as a `fix`; a project
-on rung 2 for the preamble is a deliberate choice, not drift.
+### What the ladder is and is not about
+
+It ranks by **maintenance**, not cost. All three are effectively free:
+`robots.ts` prerenders to a static file — confirm with
+
+```bash
+node -e 'console.log(Object.keys(require("./.next/prerender-manifest.json").routes))'   | grep robots
+```
+
+— so nothing runs per request, and it registers one static route against a
+budget of 2048. `public/` registers none. That difference is not a reason to
+choose anything.
+
+Do not argue for rung 3 on cost grounds. Report a project sitting there with a
+hardcoded list as a `fix`; a project on rung 2 for the preamble is a deliberate
+choice, not drift.
 
 ### The policy preamble
 
