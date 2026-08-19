@@ -17,12 +17,12 @@
 # Last refreshed: 2026-08-20
 
 Ai2Bot                          training    Allen Institute
-Amazonbot                       search      Amazon
+Amazonbot                       ai-search   Amazon
 Applebot-Extended               training    Apple  (robots-only policy token)
 Bytespider                      training    ByteDance
 CCBot                           training    Common Crawl
 ChatGPT-User                    user-agent  OpenAI
-Claude-SearchBot                search      Anthropic
+Claude-SearchBot                ai-search   Anthropic
 Claude-User                     user-agent  Anthropic
 Claude-Web                      training    Anthropic  (retired, harmless)
 ClaudeBot                       training    Anthropic
@@ -36,14 +36,14 @@ ImagesiftBot                    training    ImageSift
 Meta-ExternalAgent              training    Meta
 Meta-ExternalFetcher            user-agent  Meta
 MistralAI-User                  user-agent  Mistral
-OAI-SearchBot                   search      OpenAI
+OAI-SearchBot                   ai-search   OpenAI
 Omgili                          training    Webz.io
 Omgilibot                       training    Webz.io  (retired alias)
-PerplexityBot                   search      Perplexity
+PerplexityBot                   ai-search   Perplexity
 Perplexity-User                 user-agent  Perplexity
-PetalBot                        search      Huawei
-Timpibot                        search      Timpi
-YouBot                          search      You.com
+PanguBot                        training    Huawei
+Timpibot                        ai-search   Timpi
+YouBot                          ai-search   You.com
 anthropic-ai                    training    Anthropic  (retired, harmless)
 cohere-ai                       training    Cohere  (retired alias)
 cohere-training-data-crawler    training    Cohere

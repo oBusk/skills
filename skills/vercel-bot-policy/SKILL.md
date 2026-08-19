@@ -96,8 +96,14 @@ When signals **disagree**, do not ask — the inconsistency *is* the finding:
 
 **C. `Content-Signal` is expected on every project.** It states policy by
 purpose rather than by agent name, so it covers crawlers no list knows about yet
-— the one non-rotting layer. Nothing enforces it. Set values matching the agent
-list already in the file; a missing `Content-Signal` is a `fix`, not an `ask`.
+— the one non-rotting layer. Nothing enforces it. A missing `Content-Signal` is
+a `fix`, not an `ask`.
+
+Its vocabulary does **not** line up with the agent list: `search=yes` means
+conventional indexing and explicitly excludes AI summaries, so blocking
+`OAI-SearchBot` beside it is `ai-input=no` working, not a contradiction. The real
+contradiction is a conventional search engine sitting in the block list. See
+`references/crawling.md` before reporting either.
 Emit it from `robots.ts` via `rules[].other`, and **without** the Cloudflare
 policy preamble.
 

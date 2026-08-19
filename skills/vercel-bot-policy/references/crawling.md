@@ -102,6 +102,35 @@ Nothing enforces it. It is a declaration, published by Cloudflare in September
 and a machine-readable reservation of rights — never as a control. The firewall
 is still the only enforcement.
 
+### Keep the signals and the list consistent
+
+The two halves state the same policy in different vocabularies, and the words do
+not line up — `Content-Signal`'s `search` means **conventional indexing and
+explicitly excludes AI-generated summaries**, which is the opposite of the
+`ai-search` tag in `ai-crawlers.txt`. Translate before comparing:
+
+| Blocked agent's purpose | Implied signal |
+| --- | --- |
+| `training` | `ai-train=no` |
+| `ai-search` | `ai-input=no` |
+| `user-agent` | `ai-input=no` |
+
+So blocking `OAI-SearchBot` alongside `search=yes` is **not** a contradiction —
+it is `ai-input=no` doing its job. Do not report it as one.
+
+The contradiction that *is* real: a **conventional** search engine in the block
+list while `search=yes` is declared. Nothing in `ai-crawlers.txt` should be one,
+but a project's own list may have drifted. Check any unfamiliar agent against
+its operator's documentation before assuming the list is right — `PetalBot` sat
+in this file until it turned out to be Huawei's Petal Search crawler rather than
+an AI agent. Their AI trainer is `PanguBot`.
+
+Two checks worth running:
+
+- Every purpose present in the blocked list has its signal set to `no`. A list
+  blocking training bots under `ai-train=yes` says two opposite things.
+- No blocked agent is a conventional indexer while `search=yes`.
+
 ### Emitting the file
 
 Either mechanism is fine now that the list is static. Do not churn a project
@@ -163,7 +192,7 @@ answers. Offer the split when the user hesitates on the binary question:
 | `purpose` | Examples | What blocking costs you |
 | --- | --- | --- |
 | `training` | GPTBot, ClaudeBot, CCBot, Google-Extended | Nothing user-facing. The usual default to disallow |
-| `search` | OAI-SearchBot, PerplexityBot, Amazonbot | Removes you from AI search results — a real trade |
+| `ai-search` | OAI-SearchBot, PerplexityBot, Amazonbot | Removes you from AI answer engines — a real trade |
 | `user-agent` | ChatGPT-User, Perplexity-User, DuckAssistBot | Blocks a fetch **a human just asked for** |
 
 Most people who say "block AI crawlers" mean `training` only. Blocking all three
