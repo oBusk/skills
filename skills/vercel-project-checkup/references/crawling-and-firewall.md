@@ -132,55 +132,45 @@ rules the project cannot create.
 
 ## Deny `.php` probes
 
-### Check this first
+### A WAF custom rule
 
+Use `rules.insert` from `vercel-api.md` — the payload there is already this
+rule, matching `path` with `op: "suf"` on `.php`. Keeping it in the firewall
+puts it alongside Bot Protection and the AI Bots ruleset, so the whole edge
+policy reads from one place, and it takes effect on publish rather than waiting
+for the next deploy.
+
+It costs one rule against the plan budget — three on Hobby. Count the existing
+`rules` before proposing it and say what it will consume.
+
+### Why not `vercel.json`
+
+`routes[].mitigate` expresses the same deny without spending a rule, and it is
+version-controlled and applies to previews. It is still not the default here:
 `routes` is the **legacy** routing property and cannot coexist with `rewrites`,
-`redirects`, `headers`, `cleanUrls` or `trailingSlash`. Adding it to a
-`vercel.json` that already has any of them breaks the deployment.
+`redirects`, `headers`, `cleanUrls` or `trailingSlash`. The JSON schema does not
+encode that constraint, so `$schema` autocomplete stays silent and the
+deployment fails only when it is pushed.
+
+Reach for it only when the custom-rule budget is genuinely full, and check for
+those keys first:
 
 ```bash
 node -e 'const c=require("./vercel.json");console.log(["rewrites","redirects","headers","cleanUrls","trailingSlash"].filter(k=>k in c))' 2>/dev/null
 ```
 
-Empty array (or no `vercel.json` at all) → use the `vercel.json` form below.
-**Anything listed → use the WAF custom rule instead.** Do not migrate existing
-routing into `routes` to make room; that is a large, risky change to land as a
-side effect of a scanner-noise cleanup.
+Anything listed rules it out. Never migrate existing routing into `routes` to
+make room — that is a large, risky change to land as a side effect of a
+scanner-noise cleanup.
 
-The JSON schema does **not** encode this constraint, so `$schema` autocomplete
-will not warn you and the failure only appears at deploy time. Check by hand.
-
-### Preferred: `vercel.json`
-
-For a project with no conflicting routing keys. Version-controlled, reviewable,
-applies to previews, no publish step. Schema confirmed:
-`routes[].mitigate.action` accepts only `challenge` or `deny`.
-
-```json
-{
-    "$schema": "https://openapi.vercel.sh/vercel.json",
-    "routes": [
-        {
-            "src": "^/.*\\.php$",
-            "mitigate": { "action": "deny" }
-        }
-    ]
-}
-```
-
-Takes effect on the next deploy. Verify afterwards:
+### Verify
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' https://example.com/wp-login.php
 ```
 
-### Alternative: WAF custom rule
-
-Use this when the project already has conflicting routing keys, or when the rule
-must take effect without a deploy — the `rules.insert` call in `vercel-api.md`.
-Counts against the plan's custom-rule budget; the `vercel.json` form is
-deployment config rather than WAF config, so it is the cheaper choice on Hobby
-when it is available at all. Verify the count either way after applying.
+Remember the rule is a **draft** until published, so verify after publishing,
+not after the write.
 
 ### Widening it
 

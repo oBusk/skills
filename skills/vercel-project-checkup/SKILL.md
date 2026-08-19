@@ -189,9 +189,13 @@ vulnerability. It denies at the edge so the request never invokes a function,
 cutting scanner noise out of logs and analytics. Say that rather than calling it
 a security fix.
 
-Prefer the `vercel.json` form — version-controlled, reviewable, applies to
-previews, no publish step. Fall back to a WAF custom rule only when it must take
-effect without a deploy. Both forms in `references/crawling-and-firewall.md`.
+Add it as a **WAF custom rule** (`rules.insert` in `references/vercel-api.md`),
+so the whole edge policy lives in one place and it applies without a deploy. It
+spends one of the plan's custom rules, so count the existing ones first.
+`vercel.json` `routes[].mitigate` is the budget-free fallback, but `routes`
+conflicts with `rewrites` / `redirects` / `headers` / `cleanUrls` /
+`trailingSlash` in a way the schema does not catch — conditions in
+`references/crawling-and-firewall.md`.
 
 ### 5c. Rate limiting
 
