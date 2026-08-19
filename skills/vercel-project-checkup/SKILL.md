@@ -197,7 +197,14 @@ For a static marketing or portfolio site with no API routes and no proxy — the
 common case here — recommend Challenge without hesitation. Otherwise recommend
 Log and name the endpoint that made you hesitate.
 
-### 5b. Deny `.php` probes
+### 5b. Let crawlers reach `robots.txt`
+
+Managed rulesets have no path scoping, so `ai_bots: deny` 403s `/robots.txt`
+itself — the crawler cannot read the policy that applies to it. A project with
+`ai_bots` active and no bypass rule for `/robots.txt` is a `fix`. Recipe in
+`references/crawling-and-firewall.md`.
+
+### 5c. Deny `.php` probes
 
 Every project here is Next.js, so a `.php` request is a vulnerability scanner.
 Check for a rule denying them; propose one if absent.
@@ -215,7 +222,7 @@ spends one of the plan's custom rules, so count the existing ones first.
 `rewrites` / `redirects` / `headers` / `cleanUrls` / `trailingSlash` in a way the
 schema does not catch — conditions in `references/crawling-and-firewall.md`.
 
-### 5c. Rate limiting
+### 5d. Rate limiting
 
 **Do not offer by default, and never add a blanket per-IP limit on `/`.** As a
 crawler defence it is weak — per-region counters, CDN-cached pages, shared-IP

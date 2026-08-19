@@ -175,6 +175,54 @@ To emit a training-only file, take the entries tagged `training`:
 awk '$2 == "training" { print $1 }' references/ai-crawlers.txt
 ```
 
+### Let crawlers reach `robots.txt`
+
+Managed rulesets have **no path scoping**, so `ai_bots: deny` returns 403 on
+`/robots.txt` too. Verified on a live project with both rulesets active:
+
+```
+GPTBot     robots.txt=403
+ClaudeBot  robots.txt=403
+```
+
+The crawler cannot read the file that tells it not to crawl. The outcome is the
+same while the ruleset stays on — they are blocked either way — but the
+declaration layer is dead: the policy is unreachable, `Content-Signal` is
+unreadable, operators who check robots from a different agent than their crawler
+see a 403, and the moment the ruleset is turned off there is nothing that was
+ever communicated.
+
+Fix with a bypass custom rule. Custom rules run **before** managed rulesets, so
+it takes effect over both:
+
+```bash
+cat <<'JSON' | pnpx vercel api "/v1/security/firewall/config?projectId=$PRJ&teamId=$TEAM" -X PATCH --input -
+{
+  "action": "rules.insert",
+  "value": {
+    "name": "Allow robots.txt",
+    "active": true,
+    "conditionGroup": [
+      { "conditions": [{ "type": "path", "op": "eq", "value": "/robots.txt" }] }
+    ],
+    "action": { "mitigate": { "action": "bypass" } }
+  }
+}
+JSON
+```
+
+Check it applies **before** the deny rules; `rules.priority` reorders if not.
+Budget: this plus the `.php` deny is 2 of the 3 rules on Hobby. Verify after
+publishing:
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}
+' -A "GPTBot/1.1" https://example.com/robots.txt
+```
+
+Report a project with `ai_bots: deny` and no such bypass as a `fix`. It is the
+most common way this whole configuration ends up incoherent.
+
 ### Enforcement
 
 Set the `ai_bots` managed ruleset to `deny` (see `vercel-api.md`). Vercel keeps
