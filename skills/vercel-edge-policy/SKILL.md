@@ -77,7 +77,7 @@ Bot Protection, so "Allow" is the default rather than a decision someone made.
 
 Ask only what the signals leave genuinely open, as two separate questions. If
 the user hesitates on B, offer the three-way split in
-`references/crawling-and-firewall.md` — most people who say "block AI" mean
+`references/crawling.md` — most people who say "block AI" mean
 training bots only, not AI search or a fetch a human just asked for.
 
 When signals **disagree**, do not ask — the inconsistency *is* the finding:
@@ -106,8 +106,8 @@ canonical list lacks are a prompt to update the canonical list, not to delete
 from the project. The list is deliberately static and committed — no package
 dependency — and this checkup is its refresh mechanism.
 
-Apply per `references/crawling-and-firewall.md`: robots for the polite signal,
-the firewall for enforcement, the two kept in agreement. A static
+Apply per `references/crawling.md`: robots for the polite signal,
+`references/firewall.md` for enforcement, the two kept in agreement. A static
 `public/robots.txt` and a `robots.ts` are both fine, but a project carrying
 **both** is serving one and silently ignoring the other — report that.
 
@@ -140,10 +140,9 @@ Log and name the endpoint that made you hesitate.
 
 ### 2b. Let crawlers reach `robots.txt`
 
-Managed rulesets have no path scoping, so `ai_bots: deny` 403s `/robots.txt`
-itself — the crawler cannot read the policy that applies to it. A project with
-`ai_bots` active and no bypass rule for `/robots.txt` is a `fix`. Recipe in
-`references/crawling-and-firewall.md`.
+`ai_bots: deny` 403s `/robots.txt` itself, so the crawler cannot read the policy
+written for it. A project with `ai_bots` active and no bypass rule for
+`/robots.txt` is a `fix`. Why, and the recipe, in `references/firewall.md`.
 
 ### 2c. Deny `.php` probes
 
@@ -161,14 +160,14 @@ spends one of the plan's custom rules, so count the existing ones first.
 `vercel.json` `routes[].mitigate` is the fallback: it spends a deployment route
 (2048 available) instead of a firewall rule, but `routes` conflicts with
 `rewrites` / `redirects` / `headers` / `cleanUrls` / `trailingSlash` in a way the
-schema does not catch — conditions in `references/crawling-and-firewall.md`.
+schema does not catch — conditions in `references/firewall.md`.
 
 ### 2d. Rate limiting
 
 **Do not offer by default, and never add a blanket per-IP limit on `/`.** As a
 crawler defence it is weak — per-region counters, CDN-cached pages, shared-IP
 false positives, and on Hobby it burns the only rate-limit slot. The full
-argument is in `references/crawling-and-firewall.md`.
+argument is in `references/firewall.md`.
 
 Propose it only when the repo has an endpoint where a burst is expensive or
 harmful, scoped to that path:

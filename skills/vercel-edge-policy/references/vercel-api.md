@@ -85,6 +85,44 @@ JSON
 Other write actions follow the same envelope: `rules.update` (with `id`),
 `rules.remove`, `ips.insert`, `managedRules.update`.
 
+### Insert a rate-limit rule
+
+```bash
+cat <<'JSON' | pnpx vercel api "/v1/security/firewall/config?projectId=$PRJ&teamId=$TEAM" -X PATCH --input -
+{
+  "action": "rules.insert",
+  "value": {
+    "name": "Rate limit login",
+    "active": true,
+    "conditionGroup": [
+      { "conditions": [{ "type": "path", "op": "pre", "value": "/api/auth" }] }
+    ],
+    "action": {
+      "mitigate": {
+        "action": "rate_limit",
+        "rateLimit": {
+          "algo": "fixed_window",
+          "window": 60,
+          "limit": 10,
+          "keys": ["ip"],
+          "action": "deny"
+        }
+      }
+    }
+  }
+}
+JSON
+```
+
+**Three different `action` fields appear in that payload.** They are not
+interchangeable:
+
+| Field | Value | Means |
+| --- | --- | --- |
+| top-level `action` | `rules.insert` | the API verb |
+| `mitigate.action` | `rate_limit` | this rule rate-limits — never change it |
+| `rateLimit.action` | `deny` | what happens once the limit is exceeded |
+
 ## Condition reference
 
 Confirmed from the published OpenAPI spec.
