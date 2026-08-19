@@ -118,17 +118,43 @@ that list current itself, so new crawlers inherit the action with no change on
 your side — which is exactly the part a hand-written robots list cannot do.
 
 The ruleset is all-or-nothing: it cannot express the `training`-only split
-above. If the user wants that split enforced rather than merely requested, leave
-`ai_bots` off and write custom rules against the `bot_name` condition type
-instead — then check it against the plan's custom-rule budget, since that is
-several rules on a plan that allows three.
+above. Enforcing that split means leaving `ai_bots` off and writing custom rules
+against the `bot_name` condition — but treat that as a maybe, not a plan:
+
+- `bot_name` is not available on every plan. Confirm it is offered for this
+  project before proposing rules built on it, rather than assuming the condition
+  type exists because it appears in the API schema.
+- Even where available it is several rules, against a budget of three on Hobby.
+
+So on most projects the honest answer is that the split can be **requested** in
+robots but not **enforced** at the edge. Say that plainly instead of proposing
+rules the project cannot create.
 
 ## Deny `.php` probes
 
+### Check this first
+
+`routes` is the **legacy** routing property and cannot coexist with `rewrites`,
+`redirects`, `headers`, `cleanUrls` or `trailingSlash`. Adding it to a
+`vercel.json` that already has any of them breaks the deployment.
+
+```bash
+node -e 'const c=require("./vercel.json");console.log(["rewrites","redirects","headers","cleanUrls","trailingSlash"].filter(k=>k in c))' 2>/dev/null
+```
+
+Empty array (or no `vercel.json` at all) → use the `vercel.json` form below.
+**Anything listed → use the WAF custom rule instead.** Do not migrate existing
+routing into `routes` to make room; that is a large, risky change to land as a
+side effect of a scanner-noise cleanup.
+
+The JSON schema does **not** encode this constraint, so `$schema` autocomplete
+will not warn you and the failure only appears at deploy time. Check by hand.
+
 ### Preferred: `vercel.json`
 
-Version-controlled, reviewable, applies to previews, no publish step. Schema
-confirmed: `routes[].mitigate.action` accepts only `challenge` or `deny`.
+For a project with no conflicting routing keys. Version-controlled, reviewable,
+applies to previews, no publish step. Schema confirmed:
+`routes[].mitigate.action` accepts only `challenge` or `deny`.
 
 ```json
 {
@@ -150,10 +176,11 @@ curl -s -o /dev/null -w '%{http_code}\n' https://example.com/wp-login.php
 
 ### Alternative: WAF custom rule
 
-When it must take effect without a deploy — the `rules.insert` call in
-`vercel-api.md`. Counts against the plan's custom-rule budget; the `vercel.json`
-form is deployment config rather than WAF config, so it is the cheaper choice on
-Hobby. Verify the count either way after applying.
+Use this when the project already has conflicting routing keys, or when the rule
+must take effect without a deploy — the `rules.insert` call in `vercel-api.md`.
+Counts against the plan's custom-rule budget; the `vercel.json` form is
+deployment config rather than WAF config, so it is the cheaper choice on Hobby
+when it is available at all. Verify the count either way after applying.
 
 ### Widening it
 
@@ -220,8 +247,7 @@ cat <<'JSON' | pnpx vercel api "/v1/security/firewall/config?projectId=$PRJ&team
           "limit": 10,
           "keys": ["ip"],
           "action": "deny"
-        },
-        "actionDuration": "15m"
+        }
       }
     }
   }
@@ -229,6 +255,22 @@ cat <<'JSON' | pnpx vercel api "/v1/security/firewall/config?projectId=$PRJ&team
 JSON
 ```
 
-Vercel's own advice, worth following: create it with `"action": "log"` first,
-watch Firewall Observability for a few days, then switch to `deny` or
-`challenge` once the traffic shape is known.
+**Three different `action` fields appear in that payload.** They are not
+interchangeable:
+
+| Field | Value | Means |
+| --- | --- | --- |
+| top-level `action` | `rules.insert` | the API verb |
+| `mitigate.action` | `rate_limit` | this rule rate-limits — never change it |
+| `rateLimit.action` | `deny` | what happens once the limit is exceeded |
+
+Vercel's advice, worth following: start with **`rateLimit.action` set to
+`log`**, watch Firewall Observability for a few days, then move it to `deny` or
+`challenge`. Only that field changes; `mitigate.action` stays `rate_limit`
+throughout, and editing the wrong one produces an invalid rule.
+
+`actionDuration` (a persistent block after the limit trips, e.g. `"15m"`) is
+deliberately left out of the baseline. It is a separately gated feature, so it
+is not safe to assume on an arbitrary project — add it only after confirming the
+plan supports it, and expect the write to be rejected rather than silently
+ignored if it does not.

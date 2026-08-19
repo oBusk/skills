@@ -38,8 +38,13 @@ authenticated` and tell the user to run `pnpx vercel login`. Do not guess.
 Find the linked project and team id, in order:
 
 - `.vercel/project.json` → `projectId`, `orgId`
-- `.vercel/repo.json` → `projects[].id`, `orgId` — repo-level links have **no**
-  `project.json`; check this before concluding the repo is unlinked
+- `.vercel/repo.json` — repo-level links have **no** `project.json`; check this
+  before concluding the repo is unlinked. `projects` is an **array**, one entry
+  per linked directory, each with its own `directory`, `id` and `orgId`. Pick
+  the entry whose `directory` is the deepest match for the directory you are
+  checking; never take `projects[0]` on faith. If no entry matches uniquely,
+  stop and ask — the wrong pick silently inspects, and later mutates, a
+  different project.
 - otherwise `list_projects` over MCP, or ask for the dashboard URL
 
 Then confirm auth with `pnpx vercel whoami`.
@@ -117,11 +122,15 @@ Infer intent before asking. Signals, strongest first:
 
 | Signal | Reads as |
 | --- | --- |
-| Firewall `managedRules.ai_bots.action` = `deny` | AI crawling unwanted |
-| Firewall `ai_bots` absent or `active: false` | AI crawling allowed (default) |
+| `ai_bots` **`active: true`** and `action: deny` | AI crawling unwanted |
+| `ai_bots` absent, or `active: false` | AI crawling allowed (default) |
 | robots disallowing `/` for `*` | search crawling unwanted |
 | robots naming AI user-agents under `disallow` | AI crawling unwanted |
 | No robots file, no firewall rules | **ambiguous — ask** |
+
+Read `active` before `action`. A disabled ruleset keeps its last `action`, so an
+inactive `ai_bots` can still read `deny` — treating that as intent inverts the
+answer. Inactive is inactive, whatever the action says.
 
 Ask only what the signals leave genuinely open, as two separate questions. If
 the user hesitates on B, offer the three-way split in
@@ -133,7 +142,11 @@ When signals **disagree**, do not ask — the inconsistency *is* the finding:
 - `ai_bots: deny` + robots silent on AI → enforcement without the polite signal;
   add the robots rules.
 - robots disallows AI + `ai_bots` off → a request bots may ignore, with nothing
-  enforcing it; set the ruleset to `deny`.
+  enforcing it. Check *which* agents robots names before proposing anything: if
+  it disallows every AI agent, offer `ai_bots: deny`. If it names only training
+  bots — the common case — say so and **ask**, because the ruleset is
+  all-or-nothing and enabling it would also block AI search and user-requested
+  fetches that robots deliberately left alone.
 - robots disallows `*` + SEO clearly wanted → surface it.
 
 Apply per `references/crawling-and-firewall.md`: robots for the polite signal,

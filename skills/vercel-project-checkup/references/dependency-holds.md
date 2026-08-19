@@ -84,9 +84,18 @@ Shared baseline across oBusk projects:
 | `typescript` | 6 | `~` | Not semver — minors add checks and change inference |
 | `lucide-react` | 0 | `^` | v1+ dropped icons still in use |
 
-`node` is declared in `devEngines.runtime.version` (`^24.19.0`) and `engines.node`
-(`24.x`), not in `dependencies` — pnpm still reports it in pass 2. Keep the two
-in agreement, and move `@types/node` only when `node` itself moves.
+`node` is declared in `devEngines.runtime.version` (`^24.19.0`) and
+`engines.node` (`24.x`), never in `dependencies`. pnpm 11 reads `devEngines` and
+reports it in pass 2 anyway, as a `(dev)` row:
+
+```
+│ node (dev)        │ 24.19.0 │ 26.7.0 │
+```
+
+That is observed output, not an assumption — so the Node row in pass 2 is
+expected and suppressed by the hold table like any other held package. Keep
+`engines.node` and `devEngines.runtime.version` in agreement, and move
+`@types/node` only when `node` itself moves.
 
 ## Upgrading
 
@@ -175,11 +184,18 @@ because it is the step most likely to break something.
 
 #### The `0.x` caret trap
 
-Caret on a `0.x` version locks the **minor**, not the major: `^0.577.0` resolves
-to `0.577.0` and nothing else — verified, not theoretical. So `lucide-react`
-held at 0 behaves like a `~` hold no matter which range character is used, and
-moving 0.577 → 0.578 is a pass-3 hand edit, not a `pnpm update`. This is why
-pass 3 runs over every held package rather than only the `~` ones.
+Caret on a `0.x` version locks the **minor**, not the major: `^0.577.0` means
+`>=0.577.0 <0.578.0`. It still admits patches, so it behaves exactly like `~`,
+not like an exact pin.
+
+For `lucide-react` the practical effect is stronger still, because it publishes
+only `0.N.0` releases and no patches — so `^0.577.0` resolves to `0.577.0` alone
+in fact, though not by rule. Do not generalise that to other `0.x` packages.
+
+Either way a `0.x` hold behaves as a minor hold whichever range character is
+used, and moving 0.577 → 0.578 is a Step 3 hand edit rather than a
+`pnpm update`. That is why pass 3 covers every held package, not only the `~`
+ones.
 
 ### Step 4 — a fresh lockfile
 
