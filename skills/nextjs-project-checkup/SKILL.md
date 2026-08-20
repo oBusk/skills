@@ -134,10 +134,12 @@ Only after the user chooses.
   fresh lockfile last.
 - **Tailwind v4 → ESLint config** — a fixed sequence
   (`references/tailwind-and-eslint.md`): `pnpx @tailwindcss/upgrade`, bump
-  `tailwind-merge`, review `globals.css`, then `@obusk/eslint-config-next@16.3`,
-  then `cssConfigPath`. Lint **fails between the first and fourth steps and that
-  is accepted** — carry on rather than fixing or reverting. If work stops in
-  that window, say so in the report.
+  `tailwind-merge`, audit what the codemod got wrong, review `globals.css`, then
+  `@obusk/eslint-config-next@16.3`, then `cssConfigPath`. Lint **fails between
+  the first and fifth steps and that is accepted** — carry on rather than fixing
+  or reverting. If work stops in that window, say so in the report. The codemod
+  silently drops JS plugins and over-applies utility renames, so this migration
+  needs a **browser check** before commit; a green build does not catch either.
 - **Other repo edits** (`<Analytics />`, workflows) — one concern per commit.
 - **Platform changes** — calls in `references/vercel-api.md`. Re-read the
   project afterwards and confirm the field actually moved.

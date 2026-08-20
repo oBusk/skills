@@ -17,17 +17,18 @@ version of the config that can pass.
 
 1. **Tailwind v3 → v4** — `pnpx @tailwindcss/upgrade`
 2. **`tailwind-merge`** — bump in the same change; its major tracks Tailwind's
-3. **Review `globals.css`** — the codemod's output needs a human pass
-4. **`@obusk/eslint-config-next@16.3`**
-5. **Add `settings.tailwindcss.cssConfigPath`** — required by 16.3
+3. **Audit what the codemod got wrong** — two known silent failures, below
+4. **Review `globals.css`** — the codemod's output needs a human pass
+5. **`@obusk/eslint-config-next@16.3`**
+6. **Add `settings.tailwindcss.cssConfigPath`** — required by 16.3
 
-### The purgatory between 1 and 4
+### The purgatory between 1 and 5
 
 **Lint will fail after the Tailwind upgrade and stay failing until
 `@obusk/eslint-config-next@16.3` lands. That is expected and accepted.**
 
 Do not try to fix those lint errors, do not revert the upgrade, and do not treat
-it as a broken step. Carry on to step 4, which is what resolves them. If the
+it as a broken step. Carry on to step 5, which is what resolves them. If the
 work stops mid-sequence for any reason, say plainly in the report that the
 project is parked in that window and which step gets it out.
 
@@ -46,6 +47,52 @@ PostCSS plugin swap. Afterwards confirm the end state:
 - `tailwindcss` at `^4`
 - PostCSS goes through `@tailwindcss/postcss`, not a `tailwindcss` plugin entry
 - no leftover `tailwind.config.{js,ts}` holding config that v4 expects in CSS
+
+### What the codemod gets wrong
+
+It does the mechanical work well and gets two things wrong in ways that do not
+announce themselves. Check both every time.
+
+**It drops JS plugins without migrating them.** The v3 `plugins: [...]` array in
+`tailwind.config.ts` is deleted and no v4 equivalent is emitted. Re-register each
+one in CSS:
+
+```css
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+```
+
+`@tailwindcss/typography` is still a separate plugin on v4 — core ships no
+`.prose` classes at all. What makes this one nasty is that `max-w-prose` *does*
+survive, because `--max-width-prose` is a core theme variable. So the content
+keeps its correct measure while every heading size, list marker, link colour and
+vertical rhythm disappears. It looks laid out, merely unstyled, and the build and
+lint both pass. Check `git diff tailwind.config.*` for a `plugins` array before
+deleting the file.
+
+**Its template pass renames strings it should not touch.** The v3→v4 utility
+renames are applied by string match across source files, so an unrelated string
+that happens to equal an old utility name gets rewritten too. Observed:
+`"outline"` → `"outline-solid"` inside a TypeScript variant union, breaking the
+build while the `cva` variant key it referred to stayed correct.
+
+```ts
+variant?: "default" | "outline-solid";   // codemod
+variant?: "default" | "outline";         // correct
+```
+
+Anything with a variant-name union — `cva`, `tv`, hand-rolled prop unions — is
+exposed. Read every non-CSS file the codemod touched and confirm each rename is
+genuinely a class name. Real renames in `className` strings
+(`bg-gradient-to-r` → `bg-linear-to-r`, `shadow-sm` → `shadow-xs`) are correct;
+leave those.
+
+### Verify in a browser
+
+A green build proves nothing here — both bugs above pass typecheck, and the
+first passes lint too. Before committing the migration, run the dev server and
+look at a page that exercises the plugins, typically a content or MDX route for
+`prose`. This is the one step in the checkup that cannot be automated away.
 
 ### Review `globals.css`
 
