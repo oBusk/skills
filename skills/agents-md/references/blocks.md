@@ -23,10 +23,14 @@ that has a better home.
 
 ## `## pnpm`
 
+Scope this to pnpm 11 additions and the settings the plugin applies. Do not
+broaden it into a general warning that pnpm is unfamiliar — the core CLI is
+unchanged, and blanket doubt spends attention on commands that behave normally.
+
 ```markdown
 ## pnpm
 
-> pnpm might be updated since your training data, rely on `pnpm help` for up to date syntax, but all core functionalities are unchanged.
+> pnpm may have changed since your training data. The core CLI is unchanged; where syntax looks unfamiliar, check `pnpm help`.
 
 ### `@obusk/pnpm-plugin-defaults`
 
