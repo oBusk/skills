@@ -60,19 +60,11 @@ package the policy rejected.
 ```markdown
 ## Code comments
 
-Do not write code comments by default. Convey meaning through names, types and
-structure.
-
-A comment is warranted only for something a reader cannot infer from the code
-itself — a non-obvious constraint, an API quirk, a deliberate workaround. Surface
-it for review rather than adding it silently.
-
-Never write a comment that argues for a change, describes what you just did, or
-references review feedback or a conversation. Comments are read years later by
-someone with no knowledge of the change that introduced them; that context
-belongs in the pull request.
+Unless explicitly instructed, do not write code comments. Use names, types and structure to convey purpose. Do not use comments to justify decisions or respond to feedback.
 ```
 
 Agents reach for comments as a way of _answering_ — narrating a fix, justifying
-an approach, pointing at code that no longer exists. That is the failure this
-section prevents, and it is why the rule is a default rather than a ban.
+an approach, pointing at code that no longer exists. That is why the block names
+those uses outright instead of leaving them to the general rule, and why the
+exception is worded as *explicitly instructed*: the decision belongs to a human,
+not to the agent's judgement of whether this comment is one of the good ones.
