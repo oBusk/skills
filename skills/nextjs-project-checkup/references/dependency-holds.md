@@ -81,7 +81,7 @@ Shared baseline across oBusk projects:
 | --- | --- | --- | --- |
 | `node` | 24 | `^` | Runtime target; also `engines.node` and `devEngines.runtime.version` |
 | `@types/node` | 24 | `^` | Must track the `node` major, not lead it |
-| `typescript` | 6 | `~` | Not semver — minors add checks and change inference |
+| `typescript` | 6 | `~` | Not semver — minors add checks and change inference. Moving to 6 needs an explicit `types` array; see below |
 | `lucide-react` | 0 | `^` | v1+ dropped icons still in use |
 
 `node` is declared in `devEngines.runtime.version` (`^24.19.0`) and
@@ -181,6 +181,35 @@ pnpm install
 
 Its own commit, its own verification — a held package's minor is held precisely
 because it is the step most likely to break something.
+
+#### TypeScript 6 and the `types` array
+
+The known blocker for the `typescript` hold. Symptom: the build fails with
+global types from a test framework no longer resolving — `describe`, `it`,
+`expect` from `@types/jest`, or the equivalent for another runner — in files that
+compiled fine on TypeScript 5.
+
+Cause is the `types` compiler option. Left unset, TypeScript decides for itself
+which `@types/*` packages to include globally; on TypeScript 6 that no longer
+picks up what it used to under pnpm's isolated `node_modules`. Naming them
+explicitly fixes it:
+
+```jsonc
+// tsconfig.json — only for projects that rely on global types
+"types": ["jest", "node"]
+```
+
+Two things to get right:
+
+- **`types` is a whitelist, not an addition.** Setting it *excludes* every
+  `@types/*` package not listed. A project that did not need it before can be
+  broken by adding it, which is why `tsconfig.reference.json` has no `types` key
+  and why this is not a blanket recommendation.
+- List what the project actually uses. Global-type packages are the test runner
+  and `node`; everything imported by name needs no entry.
+
+Reaching TypeScript 6 is a Step 3 hand edit and the `types` change belongs in
+the same commit — the build does not pass in between.
 
 #### The `0.x` caret trap
 

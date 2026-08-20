@@ -118,6 +118,43 @@ else on the repo gets the file deleted from their working copy on pull, and Next
 regenerates it on their next build — harmless, but worth saying rather than
 having it surprise someone.
 
+## `AGENTS.md` and `CLAUDE.md`
+
+**Commit them.** They are the opposite of `next-env.d.ts` above, and the
+similarity is a trap: both are touched by Next, but only one is a build
+artifact.
+
+From Next 16.3, `next dev` writes a managed block into both files when it
+detects an agent in the environment:
+
+```md
+<!-- BEGIN:nextjs-agent-rules -->
+...
+<!-- END:nextjs-agent-rules -->
+```
+
+Next's own guidance is explicit that this is not a file to ignore:
+
+> This block is written and re-added by `next dev`. Removing it from a diff only
+> re-creates the uncommitted change; committing it with your work keeps the tree
+> clean.
+
+So:
+
+- **Never gitignore them.** They would regenerate on every dev run and show as
+  untracked forever, which is the state that prompts someone to ignore them
+  again.
+- **Never strip the managed block** to tidy a diff. It comes straight back.
+- **Content outside the block is yours** and is preserved on regeneration — Next
+  upserts rather than overwrites. That is where project description, commands
+  and conventions go.
+- A regenerated block appearing mid-task is not a finding. Fold it into the
+  commit you are already making and say so.
+
+Untracked `AGENTS.md` / `CLAUDE.md` is itself the finding: commit them. This
+skill reads a project's `AGENTS.md` for a `## Dependency holds` section
+(`dependency-holds.md`), which only works if the file is in the repo.
+
 ## GitHub Actions: pnpm setup
 
 Use **`pnpm/setup`**, not the older `pnpm/action-setup`. `pnpm/setup@v2`
@@ -157,6 +194,13 @@ broken workflow. **Write the tag form** — `pnpm/setup@v2` — and let the bot 
 it. `.github/dependabot.yml` already runs `package-ecosystem: github-actions`
 daily, so it rewrites the tag to a SHA-plus-comment on its next pass.
 
+**`pnpm update` never touches workflow files.** Action versions live in
+`.github/workflows/*.yml`, which no package manager reads — `pnpm update`,
+`pnpm update --latest` and a fresh lockfile all leave them untouched. The only
+things that move an action pin are Dependabot and a human edit. If SHAs change
+mid-session, a Dependabot commit was pulled in; it was not a command you ran, so
+do not report it as one.
+
 Apply the same rule to every action in a workflow you touch: edit in tag form,
 let Dependabot re-pin. Never hand-write a SHA, and never leave an existing
 SHA-pinned line rewritten to a tag *and* stale — if you change the line, change
@@ -179,7 +223,9 @@ and commit. Next only *adds* what it needs; it never removes stale options or
 revises `target`.
 
 **Hand-maintained.** Compare the rest against `tsconfig.reference.json` in this
-directory. Report drift, do not apply it blindly — `paths` in particular is a
+directory. Report drift, do not apply it blindly — `types` is absent from the
+reference on purpose (see `dependency-holds.md`; it is per-project and adding it
+to a project that does not need it *removes* global types), and `paths` is a
 per-project convention (these projects use `^/*` → `./src/*`, not the
 `@/*` create-next-app default) and differences there are expected, not findings.
 

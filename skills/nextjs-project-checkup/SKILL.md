@@ -62,7 +62,8 @@ would otherwise fall through the gap between passes 1 and 2 and stop being
 checked at all.
 
 Read a declared range as intent, not as a style error: `~` on `typescript` is
-correct. Also run `pnpm audit` and report anything other than "No known
+correct. Moving `typescript` to 6 needs an explicit `types` array in
+`tsconfig.json` in the same commit, or global test types stop resolving. Also run `pnpm audit` and report anything other than "No known
 vulnerabilities found".
 
 ## Step 2 — Repo config
@@ -84,6 +85,9 @@ Details for each in `references/workspace-config.md`.
 - **Stale workspace entries** — dead audit overrides, and `trustPolicyExclude` /
   `allowBuilds` entries naming versions no longer in the tree. A dead override
   is proven by re-resolving without it, never by eyeballing versions.
+- **`AGENTS.md` / `CLAUDE.md`** — must be **committed**. `next dev` writes a
+  managed block into them from Next 16.3; untracked or gitignored is the
+  finding, and a regenerated block mid-task belongs in the commit, not a report.
 - **`next-env.d.ts`** — must be **both** gitignored and untracked.
   Ignored-but-committed is the common broken state, since `.gitignore` does not
   apply retroactively to tracked files.
