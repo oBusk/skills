@@ -118,8 +118,15 @@ One `vercel api` call to the project endpoint covers these:
   against Step 2: package installed but analytics off (or the reverse) is the
   common broken state.
 - **Fluid Compute** — `defaultResourceConfig.fluid`. `false` is the finding.
-- Report when off-nominal: `speedInsights` (same `enabledAt` rule), `nodeVersion`
-  vs `engines.node`, and `ssoProtection` on a site meant to be public.
+- Report when off-nominal: `nodeVersion` vs `engines.node`, and `ssoProtection`
+  on a site meant to be public.
+
+**Speed Insights is deliberately not checked.** Hobby allows it on exactly one
+project across the whole account, so "not enabled" is the correct state almost
+everywhere and enabling it during a routine checkup spends an account-wide slot
+on whichever project happened to be looked at first. Do not report `speedInsights`
+and do not offer to turn it on, whatever it currently says. Web Analytics is the
+one to check — it is per-project and has no such cap.
 
 ## Step 4 — Report
 

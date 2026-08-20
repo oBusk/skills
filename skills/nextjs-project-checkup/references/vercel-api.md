@@ -26,7 +26,6 @@ Fields this checkup uses:
 | Field | Means |
 | --- | --- |
 | `webAnalytics.enabledAt` | Web Analytics on. Absent (even with an `id`) = off |
-| `speedInsights.enabledAt` | Speed Insights on, same rule |
 | `defaultResourceConfig.fluid` | Fluid Compute. `false` is the finding |
 | `defaultResourceConfig.functionDefaultMemoryType` | `standard_legacy` travels with fluid off |
 | `security.managedRules` | Summary of the managed rulesets |
