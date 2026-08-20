@@ -12,7 +12,8 @@ Four groups, in the order they appear:
    pairing is the trap: both are written by Next, and only one is an artifact.
 3. **CI** — the pnpm action, what `pnpm update` does to workflow files, and
    removing `.github/dependabot.yml`.
-4. **`tsconfig.json`** — the half Next maintains and the half you do.
+4. **`next.config.ts`** — the React Compiler flags, and keeping Babel out.
+5. **`tsconfig.json`** — the half Next maintains and the half you do.
 
 ## Pinned `@types/react` / `@types/react-dom`
 
@@ -291,6 +292,47 @@ Two things the file does **not** control, so deleting it does not disable them:
 
 This is a settled decision for these projects. Do not re-propose adding
 Dependabot back on a later run.
+
+## React Compiler
+
+Two flags, and the second is the point:
+
+```ts
+const nextConfig: NextConfig = {
+    reactCompiler: true,
+    experimental: {
+        turbopackRustReactCompiler: true,
+    },
+};
+```
+
+- **`reactCompiler`** is top level, not experimental. On its own the compiler
+  runs through `babel-plugin-react-compiler`, which has to be installed.
+- **`experimental.turbopackRustReactCompiler`** swaps that for the native Rust
+  port running inside Turbopack. It selects the implementation and does **not**
+  turn the compiler on by itself, so `reactCompiler: true` stays.
+
+Two gates. **Next 16.3+**, where the flag was introduced. And **Turbopack** —
+with webpack it throws, so a `webpack` key in `next.config` or a `--webpack`
+flag in the build script rules it out. Report that rather than enabling it.
+
+### Then remove the Babel plugin
+
+Once the Rust port is on, `babel-plugin-react-compiler` is dead weight:
+
+```bash
+pnpm remove babel-plugin-react-compiler
+```
+
+**Order matters.** Add the flag first, remove the dependency second. Reversed,
+the build breaks in between — `reactCompiler: true` without the Rust flag still
+expects the plugin.
+
+Also check for a Babel config file (`.babelrc`, `babel.config.*`). A Next
+project should have none, though the cost differs by bundler: under Turbopack
+Next runs Babel as an extra pass when it finds one, with SWC still handling the
+internal transforms, so it is waste rather than breakage. Under webpack it
+disables SWC outright.
 
 ## `tsconfig.json`
 
