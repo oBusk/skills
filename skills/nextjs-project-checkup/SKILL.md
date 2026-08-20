@@ -88,8 +88,8 @@ Details for each in `references/workspace-config.md`.
 - **`AGENTS.md` / `CLAUDE.md`** — must be **committed**. `next dev` writes a
   managed block into them from Next 16.3; untracked or gitignored is the
   finding, and a regenerated block mid-task belongs in the commit, not a report.
-  `AGENTS.md` should also carry the `## pnpm` block from
-  `references/agents-pnpm-notes.md` — diff and report drift both ways.
+  A pnpm repo whose `AGENTS.md` lacks a `## pnpm` section is a `fix` — report it
+  and name the `agents-md` skill; do not write the section from here.
 - **`next-env.d.ts`** — must be **both** gitignored and untracked.
   Ignored-but-committed is the common broken state, since `.gitignore` does not
   apply retroactively to tracked files.

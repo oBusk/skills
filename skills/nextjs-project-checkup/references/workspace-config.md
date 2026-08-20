@@ -199,16 +199,13 @@ So:
   commit you are already making and say so.
 
 Untracked `AGENTS.md` / `CLAUDE.md` is itself the finding: commit them. This
-skill reads a project's `AGENTS.md` twice over — for a `## Dependency holds`
-section (`dependencies.md`) and for the `## pnpm` block
-(`agents-pnpm-notes.md`) — and neither works if the file is not in the repo.
+skill reads a project's `AGENTS.md` for a `## Dependency holds` section
+(`dependencies.md`), which only works if the file is in the repo.
 
-The `## pnpm` block is the counterpart to `ai-crawlers.txt` in the other skill:
-this repo holds the canonical copy, every project carries it verbatim, and the
-checkup is what keeps them in step. It exists because the pnpm behaviours it
-lists are ones an agent gets *confidently wrong* rather than looks up — a skill
-cannot help there, since nothing triggers it, but a file loaded at session start
-corrects the assumption before it is acted on.
+A `pnpm` repo whose `AGENTS.md` has no `## pnpm` section, or a `CLAUDE.md` that
+is a symlink rather than an `@AGENTS.md` reference, is a `fix` — but the content
+belongs to the separate `agents-md` skill. Report it and name that skill; do not
+invoke it and do not write the section from memory here.
 
 ## GitHub Actions: pnpm setup
 
