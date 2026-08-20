@@ -18,7 +18,10 @@ so it is safe to take and needs no discussion. Empty output means every
 dependency is at the top of its declared range. This is the actionable list.
 
 **Pass 2 — plain `pnpm outdated`** compares against the absolute latest,
-ignoring ranges, so it surfaces major bumps. Cross-reference against the hold
+ignoring ranges, so it surfaces major bumps. Rows here are not all `package.json`
+entries: `node` arrives from `devEngines`, and GitHub Actions arrive from
+`.github/workflows` because the plugin enables `updateConfig.githubActions`
+(`workspace-config.md`). Cross-reference against the hold
 table below: held packages appearing here are **expected** and must not be
 reported as findings. Everything else is a genuine major-upgrade candidate.
 

@@ -181,30 +181,39 @@ Correct shape:
 - There is no `version` input to set: pnpm's version comes from
   `packageManager` in `package.json`.
 
-### Do not hunt for the commit SHA
+### `pnpm update` updates the actions
 
-These workflows pin actions by commit SHA with a version comment:
+**Action versions are pnpm's job in these projects, not Dependabot's.**
+`@obusk/pnpm-plugin-defaults` sets `updateConfig.githubActions = true`, so
+`pnpm outdated` reports outdated actions from `.github/workflows/*.yml` alongside
+packages, and `pnpm update` bumps them. Elsewhere the same behaviour is
+`--include-github-actions` on either command.
+
+pnpm writes the pinned form itself — exact commit SHA, release tag preserved as a
+comment:
 
 ```yaml
 uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
 ```
 
-Resolving that SHA by hand is a large, error-prone detour, and a wrong SHA is a
-broken workflow. **Write the tag form** — `pnpm/setup@v2` — and let the bot pin
-it. `.github/dependabot.yml` already runs `package-ecosystem: github-actions`
-daily, so it rewrites the tag to a SHA-plus-comment on its next pass.
+So when editing a workflow by hand, **write the tag form** — `pnpm/setup@v2` —
+and let the next `pnpm update` resolve and pin it. Never hand-resolve a SHA: it
+is an error-prone detour and a wrong one is a broken workflow.
 
-**`pnpm update` never touches workflow files.** Action versions live in
-`.github/workflows/*.yml`, which no package manager reads — `pnpm update`,
-`pnpm update --latest` and a fresh lockfile all leave them untouched. The only
-things that move an action pin are Dependabot and a human edit. If SHAs change
-mid-session, a Dependabot commit was pulled in; it was not a command you ran, so
-do not report it as one.
+Two consequences worth holding onto:
 
-Apply the same rule to every action in a workflow you touch: edit in tag form,
-let Dependabot re-pin. Never hand-write a SHA, and never leave an existing
-SHA-pinned line rewritten to a tag *and* stale — if you change the line, change
-it to the intended major and let the bot resolve the rest.
+- **Workflow diffs during a dependency upgrade are expected.** `pnpm update`
+  touching `.github/workflows` is the configured behaviour, not contamination
+  from another process. Do not attribute it to Dependabot or to a pulled commit,
+  and do not report it as unexplained.
+- **`pnpm outdated` rows are not all packages.** An action can appear in pass 1
+  or pass 2 (`dependency-holds.md`) and is not a `package.json` entry — do not go
+  hunting for it in `dependencies`.
+
+A project also running `package-ecosystem: github-actions` in
+`.github/dependabot.yml` now has two things doing this job. That is not broken —
+whichever runs first wins and the other sees nothing to do — but it is worth
+surfacing once so the user can decide whether to keep both.
 
 ## `tsconfig.json`
 

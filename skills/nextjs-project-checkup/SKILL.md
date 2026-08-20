@@ -95,7 +95,7 @@ Details for each in `references/workspace-config.md`.
   rest against `references/tsconfig.reference.json`. Expect `paths` to differ.
 - **CI** — `pnpm/setup` (not `pnpm/action-setup`) with `cache: true`, and no
   leftover `run_install` / `standalone`. Write action refs in **tag** form and
-  let Dependabot re-pin the SHA; never hand-resolve a commit hash.
+  let `pnpm update` resolve and pin the SHA; never hand-resolve a commit hash.
 - **Analytics wiring** — `@vercel/analytics` in `dependencies` *and*
   `<Analytics />` rendered in the root layout. The package alone reports nothing.
 
