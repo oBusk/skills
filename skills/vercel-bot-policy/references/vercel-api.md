@@ -87,6 +87,10 @@ Other write actions follow the same envelope: `rules.update` (with `id`),
 
 ### Insert a rate-limit rule
 
+**Starts in `log`.** Rate-limit rules go live on write with no staging step, so a
+first rule that denies can block real clients before anyone sees a graph. Observe
+first, then tighten.
+
 ```bash
 cat <<'JSON' | pnpx vercel api "/v1/security/firewall/config?projectId=$PRJ&teamId=$TEAM" -X PATCH --input -
 {
@@ -105,7 +109,7 @@ cat <<'JSON' | pnpx vercel api "/v1/security/firewall/config?projectId=$PRJ&team
           "window": 60,
           "limit": 10,
           "keys": ["ip"],
-          "action": "deny"
+          "action": "log"
         }
       }
     }
@@ -121,7 +125,11 @@ interchangeable:
 | --- | --- | --- |
 | top-level `action` | `rules.insert` | the API verb |
 | `mitigate.action` | `rate_limit` | this rule rate-limits — never change it |
-| `rateLimit.action` | `deny` | what happens once the limit is exceeded |
+| `rateLimit.action` | `log` | what happens once the limit is exceeded |
+
+Watch Firewall Observability for a few days, then move **only**
+`rateLimit.action` to `deny` or `challenge` via `rules.update`. `mitigate.action`
+stays `rate_limit` throughout; editing that one instead produces an invalid rule.
 
 ## Condition reference
 

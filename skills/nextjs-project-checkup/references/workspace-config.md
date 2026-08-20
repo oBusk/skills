@@ -52,19 +52,27 @@ do nothing but add noise and pin risk.
 
 A version comparison is **not** a valid test — seeing `sharp@0.35.3` in the tree
 does not tell you whether the override is what put it there. Re-resolve without
-the entry and compare:
+the entry and diff the **whole lockfile**:
 
 ```bash
 cp pnpm-lock.yaml /tmp/lock.bak && cp pnpm-workspace.yaml /tmp/ws.bak
 # remove the override entries under test from pnpm-workspace.yaml
 pnpm install --lockfile-only --ignore-scripts
-diff <(grep -oE '^  [a-z@/-]+@[0-9.]+:' /tmp/lock.bak | sort -u) \
-     <(grep -oE '^  [a-z@/-]+@[0-9.]+:' pnpm-lock.yaml | sort -u)
+diff /tmp/lock.bak pnpm-lock.yaml
 cp /tmp/lock.bak pnpm-lock.yaml && cp /tmp/ws.bak pnpm-workspace.yaml
 ```
 
-Empty diff = the override is dead, safe to delete. Any version moving *down* =
-it is load-bearing, keep it.
+pnpm records overrides in the lockfile's own `overrides:` block, so removing an
+entry always changes that block. **That one hunk is the expected change.** If it
+is the only hunk, the override is dead and safe to delete. Any change under
+`packages:` or `snapshots:` means it was load-bearing — keep it.
+
+Diff the whole file rather than extracting keys. A set of `name@version` keys
+cannot see a *rewiring*: if the vulnerable version is already in the tree for
+another consumer, dropping the override can point more dependents at it while
+the set of distinct keys stays identical. On a security-remediation override
+that failure direction is the dangerous one — it reports "safe to delete" about
+the thing holding a CVE shut.
 
 `--lockfile-only --ignore-scripts` keeps this off `node_modules`, so it is safe
 to run mid-checkup. Always restore both files, then confirm with `git status`
@@ -83,15 +91,29 @@ trustPolicyExclude:
     - tailwind-merge@2.6.1
 ```
 
-Test by checking whether that exact version is still resolved:
+Test by checking whether that exact version is still resolved. Read the
+**lockfile**, never `node_modules/.pnpm`:
 
 ```bash
-ls node_modules/.pnpm | grep -E "^tailwind-merge@[0-9]"
+grep -oE "^  '?[^:(]+" pnpm-lock.yaml | sed "s/^  '*//; s/'*$//" | sort -u > /tmp/tree
+grep -qxF "tailwind-merge@2.6.1" /tmp/tree && echo live || echo stale
 ```
 
-A version present in the tree means the entry is live. Absent means it is stale
-— delete it. This is a much cheaper test than the override one because the
-entries are keyed by exact version, so presence is the whole question.
+Present means live, absent means stale. Presence is the whole question here, so
+this is far cheaper than the override test above.
+
+**`ls node_modules/.pnpm` gives false "stale" verdicts.** pnpm truncates long
+directory names and replaces the tail with a hash, so a live entry can appear as
+`eslint-import-resolver-type_c0005fdca248493a494a3f20e85da841` and never match a
+name grep. That has already produced a wrong answer on a real run, nearly
+deleting a live `trustPolicyExclude` entry. The lockfile always carries the full
+`name@version`.
+
+The `sed` strips pnpm's quoting, which wraps every **scoped** package
+(`'@types/react@19.2.18':`), and `[^:(]` stops before peer suffixes
+(`acorn-jsx@5.3.2(acorn@8.18.0)`). Both forms are invisible to a naive
+`^  [a-z@/-]+@[0-9.]+:` pattern, which silently skips roughly 40% of a real
+lockfile.
 
 Unversioned `allowBuilds` entries (`sharp: true`) only go stale when the package
 leaves the tree entirely.

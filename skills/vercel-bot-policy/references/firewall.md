@@ -177,7 +177,9 @@ identity, which is more precise than by volume.
 The payload and the three-`action`-field trap are in `vercel-api.md`.
 
 Vercel's advice, worth following: start in `log`, watch Firewall Observability
-for a few days, then move to `deny` or `challenge`.
+for a few days, then move to `deny` or `challenge`. The recipe in
+`vercel-api.md` is already `log` for that reason — do not paste a `deny` in on
+the first write.
 
 `actionDuration` (a persistent block after the limit trips, e.g. `"15m"`) is
 deliberately left out of the baseline. It is a separately gated feature, so it
