@@ -91,29 +91,44 @@ trustPolicyExclude:
     - tailwind-merge@2.6.1
 ```
 
-Test by checking whether that exact version is still resolved. Read the
-**lockfile**, never `node_modules/.pnpm`:
+Ask pnpm whether that exact version is still resolved. **Do not parse the
+lockfile and do not read `node_modules/.pnpm`** — `pnpm why` answers from pnpm's
+own resolution and emits JSON:
 
 ```bash
-grep -oE "^  '?[^:(]+" pnpm-lock.yaml | sed "s/^  '*//; s/'*$//" | sort -u > /tmp/tree
-grep -qxF "tailwind-merge@2.6.1" /tmp/tree && echo live || echo stale
+pnpm why tailwind-merge --depth 0 --json
 ```
 
-Present means live, absent means stale. Presence is the whole question here, so
-this is far cheaper than the override test above.
+```json
+[{ "name": "tailwind-merge", "version": "3.6.0", "dependents": [ ... ] }]
+```
 
-**`ls node_modules/.pnpm` gives false "stale" verdicts.** pnpm truncates long
-directory names and replaces the tail with a hash, so a live entry can appear as
-`eslint-import-resolver-type_c0005fdca248493a494a3f20e85da841` and never match a
-name grep. That has already produced a wrong answer on a real run, nearly
-deleting a live `trustPolicyExclude` entry. The lockfile always carries the full
-`name@version`.
+The entry is live if any returned `version` equals the pinned one, stale
+otherwise. An absent package yields an empty array, so "stale" and "gone" need
+no special casing:
 
-The `sed` strips pnpm's quoting, which wraps every **scoped** package
-(`'@types/react@19.2.18':`), and `[^:(]` stops before peer suffixes
-(`acorn-jsx@5.3.2(acorn@8.18.0)`). Both forms are invisible to a naive
-`^  [a-z@/-]+@[0-9.]+:` pattern, which silently skips roughly 40% of a real
-lockfile.
+```bash
+pnpm why tailwind-merge --depth 0 --json | node -e '
+  let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+    let j=[];try{j=JSON.parse(s)}catch(e){}
+    console.log(j.some(p=>p.version===process.argv[1])?"live":"stale")
+  })' 2.6.1
+```
+
+`dependents` also tells you *why* it is still there, which is what you want in
+the report when an entry turns out to be load-bearing.
+
+Two ways this check has been got wrong before, both worth not repeating:
+
+- **`ls node_modules/.pnpm`** truncates long directory names and hashes the
+  tail, so a live entry appears as
+  `eslint-import-resolver-type_c0005fdca248493a494a3f20e85da841` and matches no
+  name grep. That produced a false "stale" on a real run and nearly deleted a
+  live `trustPolicyExclude` entry.
+- **Grepping `pnpm-lock.yaml`** means owning pnpm's serialisation: scoped
+  packages are quoted (`'@types/react@19.2.18':`) and snapshots carry peer
+  suffixes (`acorn-jsx@5.3.2(acorn@8.18.0)`). A naive pattern skips roughly 40%
+  of a real lockfile, and the format is free to change between majors.
 
 Unversioned `allowBuilds` entries (`sharp: true`) only go stale when the package
 leaves the tree entirely.
