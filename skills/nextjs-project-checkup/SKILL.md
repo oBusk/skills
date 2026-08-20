@@ -48,7 +48,7 @@ Then confirm auth with `pnpx vercel whoami`.
 ## Step 1 — Dependencies
 
 Three passes, reported separately. Full mechanics and the hold table are in
-`references/dependency-holds.md`.
+`references/dependencies.md`.
 
 | Pass | Command | Reports |
 | --- | --- | --- |
@@ -130,7 +130,7 @@ policy were not checked, so a clean report is never mistaken for a full one.
 Only after the user chooses.
 
 - **Dependencies** — follow the ordered steps in
-  `references/dependency-holds.md`; the config dependency goes first and the
+  `references/dependencies.md`; the config dependency goes first and the
   fresh lockfile last.
 - **Tailwind v4 → ESLint config** — a fixed sequence
   (`references/tailwind-and-eslint.md`): `pnpx @tailwindcss/upgrade`, bump

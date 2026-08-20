@@ -1,8 +1,18 @@
 # Workspace config and repo hygiene
 
-Covers `pnpm-workspace.yaml`, `tsconfig.json`, and the files that should never
-have been committed. All of it drifts silently — nothing fails when these go
-stale, which is why they need a periodic pass.
+Everything here drifts silently — nothing fails when these go stale, which is
+why they need a periodic pass rather than a test.
+
+Four groups, in the order they appear:
+
+1. **`pnpm-workspace.yaml`** — the `@types/react` pins, and pruning entries that
+   have outlived what they were added for.
+2. **Generated files** — `next-env.d.ts` must be ignored and untracked;
+   `AGENTS.md` and `CLAUDE.md` must be committed. They sit together because the
+   pairing is the trap: both are written by Next, and only one is an artifact.
+3. **CI** — the pnpm action, what `pnpm update` does to workflow files, and
+   removing `.github/dependabot.yml`.
+4. **`tsconfig.json`** — the half Next maintains and the half you do.
 
 ## Pinned `@types/react` / `@types/react-dom`
 
@@ -153,7 +163,7 @@ So:
 
 Untracked `AGENTS.md` / `CLAUDE.md` is itself the finding: commit them. This
 skill reads a project's `AGENTS.md` for a `## Dependency holds` section
-(`dependency-holds.md`), which only works if the file is in the repo.
+(`dependencies.md`), which only works if the file is in the repo.
 
 ## GitHub Actions: pnpm setup
 
@@ -207,7 +217,7 @@ Two consequences worth holding onto:
   from another process. Do not attribute it to Dependabot or to a pulled commit,
   and do not report it as unexplained.
 - **`pnpm outdated` rows are not all packages.** An action can appear in pass 1
-  or pass 2 (`dependency-holds.md`) and is not a `package.json` entry — do not go
+  or pass 2 (`dependencies.md`) and is not a `package.json` entry — do not go
   hunting for it in `dependencies`.
 
 ### Remove `.github/dependabot.yml`
@@ -258,7 +268,7 @@ revises `target`.
 
 **Hand-maintained.** Compare the rest against `tsconfig.reference.json` in this
 directory. Report drift, do not apply it blindly — `types` is absent from the
-reference on purpose (see `dependency-holds.md`; it is per-project and adding it
+reference on purpose (see `dependencies.md`; it is per-project and adding it
 to a project that does not need it *removes* global types), and `paths` is a
 per-project convention (these projects use `^/*` → `./src/*`, not the
 `@/*` create-next-app default) and differences there are expected, not findings.

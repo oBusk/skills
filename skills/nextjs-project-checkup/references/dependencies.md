@@ -1,8 +1,16 @@
-# Dependency holds
+# Dependencies
 
-Some packages are deliberately kept on an older major. They are not out of date
-— reporting them as findings every run is noise, and the point of this file is
-to keep the checkup quiet about them while still catching real drift.
+Detecting what is out of date, and moving it. Two halves:
+
+- **The three passes** below find drift. They exist in that shape because some
+  packages are deliberately held on an older major — reporting those as findings
+  every run is noise, and suppressing them naively stops checking them at all.
+- **Upgrading** is an ordered sequence, not a command. The config dependency goes
+  first so everything resolves under it, and the fresh lockfile goes last.
+
+Both halves interleave with `workspace-config.md`: the `@types/react` override
+moves in the same commit as its package bump, and stale-entry pruning can only
+run once the updates have landed.
 
 ## The three-pass check
 
