@@ -1,0 +1,49 @@
+# Canonical AI crawler user-agent tokens for oBusk projects.
+#
+# This file is the source of truth. Projects carry a static copy in their own
+# robots output; the checkup diffs the project against this list and reports
+# drift in both directions.
+#
+# purpose: training | ai-search | user-agent
+#   training   — corpus collection for model training. Default to disallow.
+#   ai-search  — AI answer engines. Blocking removes you from those results.
+#   user-agent — a fetch a human explicitly asked for. Blocking is user-visible.
+#
+# Cross-check sources when refreshing (no single one is complete):
+#   @geosuite/ai-crawler-bots  — a starting point, known to lag; missing
+#                                Claude-SearchBot and Claude-User as of 0.6.3
+#   operator docs              — the authority for each agent, linked below
+#
+# Last refreshed: 2026-08-20
+
+Ai2Bot                          training    Allen Institute
+Amazonbot                       ai-search   Amazon
+Applebot-Extended               training    Apple  (robots-only policy token)
+Bytespider                      training    ByteDance
+CCBot                           training    Common Crawl
+ChatGPT-User                    user-agent  OpenAI
+Claude-SearchBot                ai-search   Anthropic
+Claude-User                     user-agent  Anthropic
+Claude-Web                      training    Anthropic  (retired, harmless)
+ClaudeBot                       training    Anthropic
+DuckAssistBot                   user-agent  DuckDuckGo
+Diffbot                         training    Diffbot
+FacebookBot                     training    Meta
+Google-Extended                 training    Google  (robots-only policy token)
+GoogleOther                     training    Google
+GPTBot                          training    OpenAI
+ImagesiftBot                    training    ImageSift
+Meta-ExternalAgent              training    Meta
+Meta-ExternalFetcher            user-agent  Meta
+MistralAI-User                  user-agent  Mistral
+OAI-SearchBot                   ai-search   OpenAI
+Omgili                          training    Webz.io
+Omgilibot                       training    Webz.io  (retired alias)
+PerplexityBot                   ai-search   Perplexity
+Perplexity-User                 user-agent  Perplexity
+PanguBot                        training    Huawei
+Timpibot                        ai-search   Timpi
+YouBot                          ai-search   You.com
+anthropic-ai                    training    Anthropic  (retired, harmless)
+cohere-ai                       training    Cohere  (retired alias)
+cohere-training-data-crawler    training    Cohere

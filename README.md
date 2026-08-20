@@ -9,8 +9,16 @@ Personal collection of agent skills, installable with [`pnpx skills`](https://np
 pnpx skills add oBusk/skills
 
 # Install a specific skill directly
-pnpx skills add oBusk/skills --skill example-skill
+pnpx skills add oBusk/skills --skill nextjs-project-checkup
 ```
+
+## Skills
+
+| Skill | What it does |
+| --- | --- |
+| [`nextjs-project-checkup`](skills/nextjs-project-checkup/) | Hygiene checkup for a Next.js project on Vercel — deps, audit, Tailwind v4, ESLint, pnpm toolchain, tsconfig, CI, Web Analytics, Fluid Compute |
+| [`agents-md`](skills/agents-md/) | Create or update AGENTS.md and CLAUDE.md — the Next.js managed block, the @AGENTS.md reference, and the shared pnpm and code-comment sections |
+| [`vercel-bot-policy`](skills/vercel-bot-policy/) | Bot and crawler policy — robots and Content-Signal, AI crawlers, Bot Protection, scanner denies, rate limiting |
 
 ## Structure
 
