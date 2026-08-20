@@ -35,11 +35,12 @@ pnpx vercel api list | grep -i firewall
 
 ## Writes
 
-Preview any mutation before running it:
+Preview a mutation before running it. Build the preview from the **complete**
+payload, including the nested `value` — `-f` flags cannot express it, so a
+flag-built preview shows a different request than the one that gets sent:
 
 ```bash
-pnpx vercel api "/v1/security/firewall/config?projectId=$PRJ&teamId=$TEAM" \
-  -X PATCH -f action=managedRules.update -f id=bot_protection --generate=curl
+echo '{"action":"managedRules.update","id":"bot_protection","value":{"active":true,"action":"challenge"}}' | pnpx vercel api "/v1/security/firewall/config?projectId=$PRJ&teamId=$TEAM" -X PATCH --input - --generate=curl
 ```
 
 `-f` / `-F` only build flat bodies. Anything with a nested `value` object must

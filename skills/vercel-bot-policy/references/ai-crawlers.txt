@@ -4,9 +4,9 @@
 # robots output; the checkup diffs the project against this list and reports
 # drift in both directions.
 #
-# purpose: training | search | user-agent
+# purpose: training | ai-search | user-agent
 #   training   — corpus collection for model training. Default to disallow.
-#   search     — AI search surfaces. Blocking removes you from those results.
+#   ai-search  — AI answer engines. Blocking removes you from those results.
 #   user-agent — a fetch a human explicitly asked for. Blocking is user-visible.
 #
 # Cross-check sources when refreshing (no single one is complete):

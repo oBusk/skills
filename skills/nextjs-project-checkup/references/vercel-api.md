@@ -45,15 +45,16 @@ pnpx vercel api list | grep -i firewall
 
 ## Writes
 
-Preview any mutation before running it:
+Preview a mutation before running it. This skill's only write is Fluid Compute,
+so preview that one — a preview of a different endpoint proves nothing about the
+command you are about to send:
 
 ```bash
-pnpx vercel api "/v1/security/firewall/config?projectId=$PRJ&teamId=$TEAM" \
-  -X PATCH -f action=managedRules.update -f id=bot_protection --generate=curl
+echo '{"defaultResourceConfig":{"fluid":true}}' | pnpx vercel api "/v9/projects/$PRJ?teamId=$TEAM" -X PATCH --input - --generate=curl
 ```
 
-`-f` / `-F` only build flat bodies. Anything with a nested `value` object must
-come from stdin via `--input -`.
+`-f` / `-F` only build flat bodies, so anything with a nested object must come
+from stdin via `--input -`.
 
 ### Enable Fluid Compute
 

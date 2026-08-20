@@ -104,10 +104,13 @@ One commit, both files. Then confirm they are tracked and not ignored:
 
 ```bash
 git ls-files --error-unmatch AGENTS.md CLAUDE.md
-grep -nE "AGENTS\.md|CLAUDE\.md" .gitignore
+git check-ignore -v AGENTS.md CLAUDE.md
 ```
 
-A hit in `.gitignore` is a finding to fix, not to work around.
+`git check-ignore` rather than a `grep` of `.gitignore`: grep matches
+commented-out lines and misses negations like `!AGENTS.md`, so it answers a
+different question than Git does. A file Git reports as ignored is a finding to
+fix, not to work around.
 
 ## Step 5 — Offer a repo review
 

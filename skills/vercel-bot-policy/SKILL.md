@@ -117,7 +117,10 @@ including the one pairing that looks like a conflict and is not.
 
 `Content-Signal` is expected on every project — it is the only layer that covers
 crawlers no list knows about yet, so a missing one is a `fix`, not an `ask`.
-Emit it from `robots.ts` via `rules[].other`, without the Cloudflare preamble.
+Add it to whichever robots output the project already has: `rules[].other` in
+`robots.ts`, or a literal line in `public/robots.txt`. Do **not** introduce a
+second mechanism to carry it — that creates the duplicate reported below. Either
+way, without the Cloudflare preamble.
 
 A project carrying **both** a `public/robots.txt` and a `robots.ts` is serving
 one and silently ignoring the other — report it.
