@@ -210,10 +210,35 @@ Two consequences worth holding onto:
   or pass 2 (`dependency-holds.md`) and is not a `package.json` entry — do not go
   hunting for it in `dependencies`.
 
-A project also running `package-ecosystem: github-actions` in
-`.github/dependabot.yml` now has two things doing this job. That is not broken —
-whichever runs first wins and the other sees nothing to do — but it is worth
-surfacing once so the user can decide whether to keep both.
+### Remove `.github/dependabot.yml`
+
+Superseded by the above. Report its presence as a `fix`.
+
+**If it only declares `package-ecosystem: github-actions`** — the common case —
+delete the whole file. `pnpm update` does that job, and two things bumping the
+same pins produces duplicate PRs and pointless churn.
+
+**If it declares other ecosystems**, remove only the `github-actions` entry and
+say what remains. An `npm` entry is also covered by this checkup's dependency
+passes, but dropping it is a larger decision — see the trade below — so surface
+it rather than deleting it.
+
+Be straight about what is lost: this is not pure redundancy. Dependabot opens PRs
+**on a schedule with nobody present**; `pnpm update` runs when someone runs it.
+Removing the config means action pins move only when a checkup happens. That is
+the intended trade here — updates arrive in one reviewed batch instead of a
+trickle of bot PRs — but it is a trade, and a repo that goes unvisited for a year
+will show it.
+
+Two things the file does **not** control, so deleting it does not disable them:
+
+- **Dependabot security updates and alerts** are repository settings, not
+  `dependabot.yml`. Vulnerability alerts keep arriving.
+- **`dependency-review.yml`** (or any workflow using
+  `actions/dependency-review-action`) is unrelated. Leave it.
+
+This is a settled decision for these projects. Do not re-propose adding
+Dependabot back on a later run.
 
 ## `tsconfig.json`
 

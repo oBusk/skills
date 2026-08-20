@@ -96,6 +96,10 @@ Details for each in `references/workspace-config.md`.
 - **CI** — `pnpm/setup` (not `pnpm/action-setup`) with `cache: true`, and no
   leftover `run_install` / `standalone`. Write action refs in **tag** form and
   let `pnpm update` resolve and pin the SHA; never hand-resolve a commit hash.
+- **`.github/dependabot.yml`** — should not exist. `pnpm update` covers action
+  pins, so a `github-actions` ecosystem entry is duplicate work; delete the file
+  if that is all it declares. Security alerts are repo settings and are not
+  affected.
 - **Analytics wiring** — `@vercel/analytics` in `dependencies` *and*
   `<Analytics />` rendered in the root layout. The package alone reports nothing.
 
