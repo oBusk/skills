@@ -118,8 +118,12 @@ One `vercel api` call to the project endpoint covers these:
   against Step 2: package installed but analytics off (or the reverse) is the
   common broken state.
 - **Fluid Compute** — `defaultResourceConfig.fluid`. `false` is the finding.
-- Report when off-nominal: `nodeVersion` vs `engines.node`, and `ssoProtection`
-  on a site meant to be public.
+- **`nodeVersion`** vs `engines.node` — report a mismatch.
+- **`ssoProtection.deploymentType`** — Vercel Authentication. Only `"all"` is a
+  finding: it puts the production custom domain behind a Vercel login. The
+  default `"prod_deployment_urls_and_all_previews"` (Standard Protection) covers
+  previews and the generated `*.vercel.app` URLs while leaving the custom domain
+  public, so it is **not** a finding and must not be reported as one.
 
 **Speed Insights is deliberately not checked.** Hobby allows it on exactly one
 project across the whole account, so "not enabled" is the correct state almost

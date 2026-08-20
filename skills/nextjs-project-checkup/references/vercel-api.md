@@ -31,7 +31,7 @@ Fields this checkup uses:
 | `security.managedRules` | Summary of the managed rulesets |
 | `security.botIdEnabled` | BotID (separate product from Bot Protection) |
 | `nodeVersion` | Compare with `engines.node` |
-| `ssoProtection` | Non-null on a public site is worth surfacing |
+| `ssoProtection.deploymentType` | Vercel Authentication. `"all"` hides the custom domain; `"prod_deployment_urls_and_all_previews"` is the default and leaves it public; `null` is off |
 
 Note the `security.managedRules` summary keys the bot ruleset as `bot_filter`,
 while the firewall config below and the write API both call it `bot_protection`.
