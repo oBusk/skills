@@ -62,9 +62,13 @@ would otherwise fall through the gap between passes 1 and 2 and stop being
 checked at all.
 
 Read a declared range as intent, not as a style error: `~` on `typescript` is
-correct. Moving `typescript` to 6 needs an explicit `types` array in
-`tsconfig.json` in the same commit, or global test types stop resolving. Also run `pnpm audit` and report anything other than "No known
-vulnerabilities found".
+correct. Moving `typescript` to 6 breaks **projects that rely on global types**
+(a test runner's `describe`/`it`/`expect`) unless `tsconfig.json` gains a `types`
+array in the same commit — but it is a whitelist, so adding one where it is not
+needed is itself a break. Conditions in `references/dependencies.md`.
+
+Also run `pnpm audit` and report anything other than "No known vulnerabilities
+found".
 
 ## Step 2 — Repo config
 

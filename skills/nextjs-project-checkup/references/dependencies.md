@@ -16,7 +16,7 @@ run once the updates have landed.
 
 ```bash
 pnpm outdated --compatible   # pass 1: in-range drift
-pnpm outdated                # pass 2: absolute latest
+pnpm outdated                # pass 2: everything outdated — includes pass 1
                              # pass 3: held packages, see below
 ```
 
@@ -26,12 +26,23 @@ so it is safe to take and needs no discussion. Empty output means every
 dependency is at the top of its declared range. This is the actionable list.
 
 **Pass 2 — plain `pnpm outdated`** compares against the absolute latest,
-ignoring ranges, so it surfaces major bumps. Rows here are not all `package.json`
-entries: `node` arrives from `devEngines`, and GitHub Actions arrive from
-`.github/workflows` because the plugin enables `updateConfig.githubActions`
-(`workspace-config.md`). Cross-reference against the hold
-table below: held packages appearing here are **expected** and must not be
-reported as findings. Everything else is a genuine major-upgrade candidate.
+ignoring ranges. It is a **superset of pass 1**, not a majors-only list —
+anything below the top of its range is also below the latest, so every pass 1
+row appears here too. Subtract before reading it:
+
+```
+majors = pass 2 − pass 1 − held packages
+```
+
+Skipping the subtraction reports a routine in-range patch as a major migration
+and sends Step 2 to run `--latest` on a package that only needed `pnpm update`.
+
+Rows here are also not all `package.json` entries: `node` arrives from
+`devEngines`, and GitHub Actions from `.github/workflows` because the plugin
+enables `updateConfig.githubActions` (`workspace-config.md`).
+
+What survives the subtraction is the genuine major-upgrade candidate list. Held
+packages appearing in pass 2 are **expected** and must not be reported.
 
 **Pass 3 — held packages** exists because passes 1 and 2 have a blind spot
 between them. A package held with `~` has its minors excluded from pass 1 (out
@@ -40,7 +51,8 @@ minor inside the held major is reported by neither. Query it directly:
 
 ```bash
 latest_in_major() {
-  npm view "$1@^$2" version --json 2>/dev/null | node -e '
+  out=$(npm view "$1@^$2" version --json) || { echo "unknown: npm view failed"; return 1; }
+  printf '%s' "$out" | node -e '
     let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
       if(!s.trim())return console.log("none");
       let v=JSON.parse(s); v=Array.isArray(v)?v:[v];
@@ -92,7 +104,7 @@ Shared baseline across oBusk projects:
 | --- | --- | --- | --- |
 | `node` | 24 | `^` | Runtime target; also `engines.node` and `devEngines.runtime.version` |
 | `@types/node` | 24 | `^` | Must track the `node` major, not lead it |
-| `typescript` | 6 | `~` | Not semver — minors add checks and change inference. Moving to 6 needs an explicit `types` array; see below |
+| `typescript` | 6 | `~` | Not semver — minors add checks and change inference. Moving to 6 may need a `types` array *if the project uses global types*; see below |
 | `lucide-react` | 0 | `^` | v1+ dropped icons still in use |
 
 `node` is declared in `devEngines.runtime.version` (`^24.19.0`) and
@@ -165,8 +177,9 @@ batch.
 
 ### Step 2 — majors
 
-Takes what pass 2 found. One package at a time, never batched, so a failure is
-attributable:
+Takes **pass 2 minus pass 1 minus held**, never pass 2 raw — the raw list
+repeats everything Step 1 already handled. One package at a time, never batched,
+so a failure is attributable:
 
 ```bash
 pnpm update <pkg> --latest

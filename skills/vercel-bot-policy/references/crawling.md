@@ -13,11 +13,16 @@ Setting one without the other is the most common finding in this checkup.
 
 ### Crawling wanted
 
-Allow `*`. Do not add an `ai_bots` firewall rule that also catches search
-crawlers — `OAI-SearchBot`, `PerplexityBot` and `Google-Extended` are *search*
-surfaces for their platforms, so denying all AI bots does remove you from AI
-search results. That is a deliberate trade, not a mistake, but name it when
+Allow `*`. Do not add an `ai_bots` firewall rule that also catches AI answer
+engines — `OAI-SearchBot`, `PerplexityBot` and `Claude-SearchBot` are the
+`ai-search` entries in `ai-crawlers.txt`, so denying all AI bots does remove you
+from those results. That is a deliberate trade, not a mistake, but name it when
 proposing `deny`.
+
+`Google-Extended` is **not** one of them despite the name — it is tagged
+`training`, and is a robots-only policy token with no crawler behind it. Blocking
+it costs Gemini training, not search placement. Googlebot is what indexes you and
+it is untouched.
 
 ### Crawling unwanted
 
@@ -60,13 +65,35 @@ worth buying.
 
 #### Checking a project against the list
 
+Read whichever mechanism the project actually uses. `robots.ts` is the common
+one, so a check hardcoded to `public/robots.txt` finds nothing, produces an empty
+project list, and reports every canonical agent as missing:
+
 ```bash
 grep -oE '^[A-Za-z0-9_-]+' ai-crawlers.txt | grep -v '^#' | sort -u > /tmp/canon
-grep -oiE 'User-agent: *[A-Za-z0-9_-]+' public/robots.txt | sed 's/.*: *//' |
-  sort -u > /tmp/project
+
+if [ -f src/app/robots.ts ]; then
+  awk '/aiCrawlers *= *\[/{f=1;next} f&&/\]/{exit} f' src/app/robots.ts |
+    grep -oE '"[^"]+"' | tr -d '"' | sort -u > /tmp/project
+elif [ -f public/robots.txt ]; then
+  grep -oiE '^User-agent: *[A-Za-z0-9_.-]+' public/robots.txt |
+    sed 's/.*: *//' | sort -u > /tmp/project
+else
+  echo "no robots output found — that is the finding"; exit 1
+fi
+[ -s /tmp/project ] || { echo "parsed no agents — check by hand"; exit 1; }
+
 comm -23 /tmp/canon /tmp/project   # in canon, missing from project
 comm -13 /tmp/canon /tmp/project   # in project, not in canon
 ```
+
+Scope the `robots.ts` read to the array. Grabbing every quoted string in the
+file drags in the `next` import and the `Content-Signal` key, which then get
+proposed as additions to the canonical list.
+
+The `-s` guard matters too: an empty project list is indistinguishable from a
+project that blocks nothing, and the two want opposite responses. Stop rather
+than report thirty false findings.
 
 Missing-from-project is a `fix`. Present-in-project-but-not-canon is a prompt to
 **update `ai-crawlers.txt`**, not to delete from the project — the project may
