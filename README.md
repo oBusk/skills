@@ -12,6 +12,16 @@ pnpx skills add oBusk/skills
 pnpx skills add oBusk/skills --skill nextjs-project-checkup
 ```
 
+## Use without installing
+
+Generate a prompt for one skill, or start a supported coding agent with it directly, without writing any files to the project:
+
+```bash
+pnpx skills use oBusk/skills@nextjs-project-checkup | claude
+
+pnpx skills use oBusk/skills --skill nextjs-project-checkup --agent claude-code
+```
+
 ## Skills
 
 | Skill | What it does |
@@ -28,7 +38,7 @@ body.
 
 ```
 skills/
-  example-skill/
+  nextjs-project-checkup/
     SKILL.md
 ```
 
@@ -36,4 +46,4 @@ skills/
 
 1. Create `skills/<skill-name>/SKILL.md`.
 2. Give it a specific `description` — it's what discovery matches against.
-3. Delete `skills/example-skill/` once you have real skills in place.
+3. Add it to the table above.
