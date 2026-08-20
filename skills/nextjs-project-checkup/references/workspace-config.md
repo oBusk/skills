@@ -3,7 +3,7 @@
 Everything here drifts silently — nothing fails when these go stale, which is
 why they need a periodic pass rather than a test.
 
-Four groups, in the order they appear:
+Five groups, in the order they appear:
 
 1. **`pnpm-workspace.yaml`** — the `@types/react` pins, and pruning entries that
    have outlived what they were added for.
@@ -109,12 +109,19 @@ otherwise. An absent package yields an empty array, so "stale" and "gone" need
 no special casing:
 
 ```bash
-pnpm why tailwind-merge --depth 0 --json | node -e '
+out=$(pnpm why tailwind-merge --depth 0 --json) || { echo "unknown: pnpm why failed"; exit 1; }
+printf '%s' "$out" | node -e '
   let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
-    let j=[];try{j=JSON.parse(s)}catch(e){}
+    const j=JSON.parse(s);   // malformed output must throw, not read as absent
     console.log(j.some(p=>p.version===process.argv[1])?"live":"stale")
   })' 2.6.1
 ```
+
+**Never swallow a failure here.** A caught exception or a non-zero exit turned
+into an empty array reads as `stale`, and `stale` means *delete a
+`trustPolicyExclude` entry* — a security-policy relaxation triggered by a
+transient command failure. Only a successfully parsed empty result means the
+package is absent; anything else is `unknown` and stops the check.
 
 `dependents` also tells you *why* it is still there, which is what you want in
 the report when an entry turns out to be load-bearing.
@@ -151,9 +158,13 @@ files, so it keeps showing up in diffs forever.
 Check both halves independently:
 
 ```bash
-grep -n "next-env.d.ts" .gitignore          # is it ignored?
+git check-ignore -v next-env.d.ts           # is it ignored? (prints the rule)
 git ls-files --error-unmatch next-env.d.ts  # is it tracked? (error = good)
 ```
+
+Use `git check-ignore`, not a `grep` of `.gitignore`. Grep matches commented-out
+lines and misses negations like `!next-env.d.ts`, so it answers a different
+question than Git does.
 
 Ignored-and-untracked is correct. Ignored-but-tracked is the finding:
 
@@ -231,8 +242,11 @@ Correct shape:
   `install`, which runs `pnpm install` by default, and `standalone` is
   meaningless now that the action always uses self-contained binaries. Carrying
   them over during a migration is the other common finding.
-- There is no `version` input to set: pnpm's version comes from
-  `packageManager` in `package.json`.
+- **`version` is optional, not absent.** The action accepts an exact version, a
+  semver range or a dist-tag, and falls back to `devEngines.packageManager` or
+  `packageManager` in `package.json` when omitted. Omitting it is the house
+  style, but a workflow that pins deliberately is not a finding — do not strip
+  it.
 
 ### `pnpm update` updates the actions
 
@@ -343,8 +357,12 @@ required entries as they change between releases. So the cheapest check is to
 build and look:
 
 ```bash
-pnpm build && git diff tsconfig.json
+pnpm build; git diff tsconfig.json
 ```
+
+Separated with `;` deliberately. Next patches `tsconfig.json` early, so a build
+that fails later has still changed the file — `&&` would hide the patch behind
+an unrelated compile error.
 
 A non-empty diff means the config was behind and Next has just fixed it — review
 and commit. Next only *adds* what it needs; it never removes stale options or
@@ -352,8 +370,7 @@ revises `target`.
 
 **Hand-maintained.** Compare the rest against `tsconfig.reference.json` in this
 directory. Report drift, do not apply it blindly — `types` is absent from the
-reference on purpose (see `dependencies.md`; it is per-project and adding it
-to a project that does not need it *removes* global types), and `paths` is a
+reference on purpose (`dependencies.md` has the conditions), and `paths` is a
 per-project convention (these projects use `^/*` → `./src/*`, not the
 `@/*` create-next-app default) and differences there are expected, not findings.
 
