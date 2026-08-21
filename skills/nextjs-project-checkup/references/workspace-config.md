@@ -309,44 +309,29 @@ Dependabot back on a later run.
 
 ## React Compiler
 
-Two flags, and the second is the point:
-
 ```ts
 const nextConfig: NextConfig = {
     reactCompiler: true,
-    experimental: {
-        turbopackRustReactCompiler: true,
-    },
 };
 ```
 
-- **`reactCompiler`** is top level, not experimental. On its own the compiler
-  runs through `babel-plugin-react-compiler`, which has to be installed.
-- **`experimental.turbopackRustReactCompiler`** swaps that for the native Rust
-  port running inside Turbopack. It selects the implementation and does **not**
-  turn the compiler on by itself, so `reactCompiler: true` stays.
+- **`reactCompiler`** is top level, not experimental. It runs through
+  `babel-plugin-react-compiler`, which has to be installed — keep it.
 
-Two gates. **Next 16.3+**, where the flag was introduced. And **Turbopack** —
-with webpack it throws, so a `webpack` key in `next.config` or a `--webpack`
-flag in the build script rules it out. Report that rather than enabling it.
+Do **not** set `experimental.turbopackRustReactCompiler`. Next's own config
+loader throws whenever that flag is set and `process.env.TURBOPACK` isn't —
+unconditionally, regardless of whether `babel-plugin-react-compiler` is still
+installed. `next/jest` loads `next.config` under `PHASE_TEST`, which is never
+exempt from that check and never runs through Turbopack, so `pnpm test` fails
+outright the moment the flag is present. There's no hybrid setup that keeps
+the flag for `next dev`/`next build` while leaving tests working. Leave the
+Babel-based setup in place even on Next 16.3+/Turbopack projects where the
+flag would otherwise apply.
 
-### Then remove the Babel plugin
-
-Once the Rust port is on, `babel-plugin-react-compiler` is dead weight:
-
-```bash
-pnpm remove babel-plugin-react-compiler
-```
-
-**Order matters.** Add the flag first, remove the dependency second. Reversed,
-the build breaks in between — `reactCompiler: true` without the Rust flag still
-expects the plugin.
-
-Also check for a Babel config file (`.babelrc`, `babel.config.*`). A Next
-project should have none, though the cost differs by bundler: under Turbopack
-Next runs Babel as an extra pass when it finds one, with SWC still handling the
-internal transforms, so it is waste rather than breakage. Under webpack it
-disables SWC outright.
+Check for a Babel config file (`.babelrc`, `babel.config.*`) only if the
+project has no other reason to keep one — a Next project with the Babel
+react-compiler plugin wired through `babel-plugin-react-compiler` is expected
+to have one now.
 
 ## `tsconfig.json`
 

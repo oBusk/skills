@@ -97,10 +97,11 @@ Details for each in `references/workspace-config.md`.
 - **`next-env.d.ts`** — must be **both** gitignored and untracked.
   Ignored-but-committed is the common broken state, since `.gitignore` does not
   apply retroactively to tracked files.
-- **React Compiler** — `reactCompiler: true` plus
-  `experimental.turbopackRustReactCompiler: true` in `next.config`, and
-  `babel-plugin-react-compiler` **removed** once the Rust port is on. Needs Next
-  16.3+ and Turbopack. The flag goes in before the dependency comes out.
+- **React Compiler** — `reactCompiler: true` in `next.config`, with
+  `babel-plugin-react-compiler` installed. Do not enable
+  `experimental.turbopackRustReactCompiler` — Next's config loader throws
+  whenever that flag is set outside Turbopack, and `next/jest` always loads
+  `next.config` outside Turbopack, so `pnpm test` fails outright.
 - **`tsconfig.json`** — `pnpm build` lets Next patch what it manages; compare the
   rest against `references/tsconfig.reference.json`. Expect `paths` to differ.
 - **CI** — `pnpm/setup` (not `pnpm/action-setup`) with `cache: true`, and no
