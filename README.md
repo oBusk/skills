@@ -1,4 +1,4 @@
-# skills
+# @oBusk/skills
 
 Personal collection of agent skills, installable with [`pnpx skills`](https://npmx.dev/package/skills).
 
