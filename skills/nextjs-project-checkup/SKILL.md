@@ -45,6 +45,10 @@ Find the linked project and team id, in order:
 
 Then confirm auth with `pnpx vercel whoami`.
 
+Run `pnpm install` so that `node_modules` and the lockfile are consistent with
+`package.json` before any dependency checks. Without this, `pnpm outdated` and
+`pnpm update` operate on stale state.
+
 ## Step 1 — Dependencies
 
 Three passes, reported separately. Full mechanics and the hold table are in

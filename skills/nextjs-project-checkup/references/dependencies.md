@@ -14,6 +14,9 @@ run once the updates have landed.
 
 ## The three-pass check
 
+These passes assume `pnpm install` has already run (Step 0 in the skill) so the
+lockfile and `node_modules` reflect the declared `package.json` state.
+
 ```bash
 pnpm outdated --compatible   # pass 1: in-range drift
 pnpm outdated                # pass 2: everything outdated — includes pass 1
