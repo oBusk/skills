@@ -80,10 +80,12 @@ Details for each in `references/workspace-config.md`.
   `settings.react.version` as the bare major `"19"` (eslint v10 only) and
   `settings.tailwindcss.cssConfigPath` once on `@obusk/eslint-config-next@16.3`.
   If the project has no Tailwind, skip every Tailwind item — not a finding.
-- **pnpm toolchain** — `packageManager` against `npm view pnpm version`, and the
-  `@obusk/pnpm-plugin-defaults` pin in `pnpm-workspace.yaml` `configDependencies`
-  (*not* `devDependencies`) against `npm view @obusk/pnpm-plugin-defaults version`.
-  A missing key is the finding.
+- **pnpm toolchain** — `packageManager` must specify pnpm **12**; a project still
+  on 11 or older is a `fix` (upgrade: `pnpm self-update next-12`). Within 12,
+  compare the exact version against `pnpm view pnpm@next-12 version`. Also check
+  the `@obusk/pnpm-plugin-defaults` pin in `pnpm-workspace.yaml`
+  `configDependencies` (*not* `devDependencies`) against
+  `pnpm view @obusk/pnpm-plugin-defaults version`. A missing key is the finding.
 - **`@types/react` / `@types/react-dom`** — pinned in both `package.json` and
   `overrides`; the two must match and must move together.
 - **Stale workspace entries** — dead audit overrides, and `trustPolicyExclude` /

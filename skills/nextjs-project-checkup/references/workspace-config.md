@@ -3,17 +3,43 @@
 Everything here drifts silently — nothing fails when these go stale, which is
 why they need a periodic pass rather than a test.
 
-Five groups, in the order they appear:
+Six groups, in the order they appear:
 
-1. **`pnpm-workspace.yaml`** — the `@types/react` pins, and pruning entries that
+1. **pnpm version** — the project must be on pnpm 12.
+2. **`pnpm-workspace.yaml`** — the `@types/react` pins, and pruning entries that
    have outlived what they were added for.
-2. **Generated files** — `next-env.d.ts` must be ignored and untracked;
+3. **Generated files** — `next-env.d.ts` must be ignored and untracked;
    `AGENTS.md` and `CLAUDE.md` must be committed. They sit together because the
    pairing is the trap: both are written by Next, and only one is an artifact.
-3. **CI** — the pnpm action, what `pnpm update` does to workflow files, and
+4. **CI** — the pnpm action, what `pnpm update` does to workflow files, and
    removing `.github/dependabot.yml`.
-4. **`next.config.ts`** — the React Compiler flags, and keeping Babel out.
-5. **`tsconfig.json`** — the half Next maintains and the half you do.
+5. **`next.config.ts`** — the React Compiler flags, and keeping Babel out.
+6. **`tsconfig.json`** — the half Next maintains and the half you do.
+
+## pnpm version
+
+All projects must be on pnpm **12**. Check the major from the `packageManager`
+field in `package.json`:
+
+```bash
+node -p "require('./package.json').packageManager"
+# e.g. "pnpm@11.15.3" → major 11 → finding
+```
+
+A project on pnpm 11 or older is a `fix`. The upgrade command crosses the major
+boundary:
+
+```bash
+pnpm self-update next-12
+```
+
+`pnpm self-update` updates the pnpm binary and rewrites the `packageManager`
+field. The `next-12` dist-tag targets the latest 12.x release. After the
+upgrade, run `pnpm install` to regenerate the lockfile under pnpm 12's resolver
+and commit both `package.json` and `pnpm-lock.yaml`.
+
+Within pnpm 12, compare the exact version against `pnpm view pnpm@next-12 version`
+— a patch behind is a pass 1 style finding, not a major migration.
 
 ## Pinned `@types/react` / `@types/react-dom`
 

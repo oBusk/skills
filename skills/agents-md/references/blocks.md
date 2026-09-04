@@ -23,7 +23,7 @@ that has a better home.
 
 ## `## pnpm`
 
-Scope this to pnpm 11 additions and the settings the plugin applies. Do not
+Scope this to pnpm 11/12 additions and the settings the plugin applies. Do not
 broaden it into a general warning that pnpm is unfamiliar — the core CLI is
 unchanged, and blanket doubt spends attention on commands that behave normally.
 

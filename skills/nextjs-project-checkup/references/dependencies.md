@@ -51,7 +51,7 @@ minor inside the held major is reported by neither. Query it directly:
 
 ```bash
 latest_in_major() {
-  out=$(npm view "$1@^$2" version --json) || { echo "unknown: npm view failed"; return 1; }
+  out=$(pnpm view "$1@^$2" version --json) || { echo "unknown: pnpm view failed"; return 1; }
   printf '%s' "$out" | node -e '
     let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
       if(!s.trim())return console.log("none");
@@ -66,7 +66,7 @@ latest_in_major typescript 6      # -> highest 6.x
 latest_in_major lucide-react 0    # -> highest 0.x
 ```
 
-The sort is load-bearing: `npm view` returns versions in **publish order, not
+The sort is load-bearing: `pnpm view` returns versions in **publish order, not
 semver order**, so taking the last element raw picks up backport patches
 (`react@^19` yields `19.0.8` unsorted, `19.2.8` sorted).
 
@@ -108,7 +108,7 @@ Shared baseline across oBusk projects:
 | `lucide-react` | 0 | `^` | v1+ dropped icons still in use |
 
 `node` is declared in `devEngines.runtime.version` (`^24.19.0`) and
-`engines.node` (`24.x`), never in `dependencies`. pnpm 11 reads `devEngines` and
+`engines.node` (`24.x`), never in `dependencies`. pnpm reads `devEngines` and
 reports it in pass 2 anyway, as a `(dev)` row:
 
 ```
