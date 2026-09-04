@@ -113,6 +113,11 @@ Details for each in `references/workspace-config.md`.
   affected.
 - **Analytics wiring** — `@vercel/analytics` in `dependencies` *and*
   `<Analytics />` rendered in the root layout. The package alone reports nothing.
+- **Speed Insights completeness** — `@vercel/speed-insights` in `dependencies` *and*
+  `<SpeedInsights />` (from `@vercel/speed-insights/next`) rendered in the root
+  layout. No dashboard toggle needed — the component self-activates on deploy.
+  This is a Vercel project-completeness baseline, not a hygiene requirement;
+  report its absence as a `fix`. Speed Insights has a free tier on all projects.
 
 ## Step 3 — Platform settings
 
@@ -130,12 +135,9 @@ One `vercel api` call to the project endpoint covers these:
   previews and the generated `*.vercel.app` URLs while leaving the custom domain
   public, so it is **not** a finding and must not be reported as one.
 
-**Speed Insights is deliberately not checked.** Hobby allows it on exactly one
-project across the whole account, so "not enabled" is the correct state almost
-everywhere and enabling it during a routine checkup spends an account-wide slot
-on whichever project happened to be looked at first. Do not report `speedInsights`
-and do not offer to turn it on, whatever it currently says. Web Analytics is the
-one to check — it is per-project and has no such cap.
+**Speed Insights** has no platform toggle — the repo-side `<SpeedInsights />`
+component is the only setup needed. Check this completeness baseline in Step 2
+only; there is nothing to verify here.
 
 ## Step 4 — Report
 
